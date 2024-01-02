@@ -1,0 +1,138 @@
+{
+  "interlocutors": {
+    "man": {
+      "gender": "male",
+      "descriptions": [
+        "office worker",
+        "policeman",
+        "journalist",
+        "lawyer",
+        "software developer"
+      ],
+      "other": {
+        "man": [
+          "his younger brother",
+          "his older brother",
+          "his father",
+          "his son",
+          "his friend",
+          "his neighbor",
+          "his boss",
+          "his colleague"
+        ],
+        "woman": [
+          "his younger sister",
+          "his older sister",
+          "his daughter",
+          "his mother",
+          "his wife",
+          "his girlfriend",
+          "his neighbor",
+          "his boss",
+          "his colleague"
+        ],
+        "boy": [
+          "his younger brother",
+          "his son"
+        ],
+        "girl": [
+          "his younger sister",
+          "his daughter"
+        ]
+      }
+    },
+    "woman": {
+      "gender": "female",
+      "descriptions": [
+        "office worker",
+        "journalist",
+        "lawyer",
+        "software developer"
+      ],
+      "other": {
+        "man": [
+          "her younger brother",
+          "her older brother",
+          "her father",
+          "her son",
+          "her boyfriend",
+          "her neighbor",
+          "her boss",
+          "her colleague"
+        ],
+        "woman": [
+          "her younger sister",
+          "her older sister",
+          "her friend",
+          "her neighbor",
+          "her boss",
+          "her colleague"
+        ],
+        "boy": [
+          "her younger brother",
+          "her son"
+        ],
+        "girl": [
+          "her younger sister",
+          "her daughter"
+        ]
+      }
+    },
+    "boy": {
+      "gender": "male",
+      "descriptions": [
+        "schoolboy"
+      ],
+      "other": {
+        "man": [
+          "his older brother",
+          "his father",
+          "his teacher"
+        ],
+        "woman": [
+          "his older sister",
+          "his mother",
+          "his teacher"
+        ],
+        "boy": [
+          "his younger brother",
+          "his older brother",
+          "his friend"
+        ],
+        "girl": [
+          "his younger sister",
+          "his older sister",
+          "his friend"
+        ]
+      }
+    },
+    "girl": {
+      "gender": "female",
+      "descriptions": [
+        "schoolgirl"
+      ],
+      "other": {
+        "man": [
+          "her older brother",
+          "her father",
+          "her teacher"
+        ],
+        "woman": [
+          "her older sister",
+          "her mother",
+          "her teacher"
+        ],
+        "boy": [
+          "her younger brother",
+          "her older brother",
+          "her friend"
+        ],
+        "girl": [
+          "her younger sister",
+          "her older sister",
+          "her friend"
+        ]
+      }
+    }
+  }
+}

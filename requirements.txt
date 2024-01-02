@@ -1,0 +1,4 @@
+openai~=1.6.0
+PyQt5~=5.15.10
+python-dotenv~=1.0.0
+azure-cognitiveservices-speech

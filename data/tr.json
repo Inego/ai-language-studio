@@ -1,0 +1,57 @@
+{
+  "name": "Turkish",
+  "names": {
+    "male": [
+      "Ahmet",
+      "Mehmet",
+      "Mustafa",
+      "Yusuf",
+      "Ali",
+      "Hakan",
+      "Murat",
+      "Emre",
+      "Okan",
+      "Burak",
+      "Cem",
+      "Kerem",
+      "Oğuz",
+      "Serkan",
+      "Can",
+      "Volkan",
+      "Fatih",
+      "Kaan",
+      "Tolga",
+      "Sinan"
+    ],
+    "female": [
+      "Aylin",
+      "Deniz",
+      "Elif",
+      "Fatma",
+      "Gülay",
+      "Hale",
+      "İrem",
+      "Jale",
+      "Kübra",
+      "Leyla",
+      "Merve",
+      "Nur",
+      "Özge",
+      "Pınar",
+      "Seda",
+      "Tülay",
+      "Ümran",
+      "Vildan",
+      "Yasemin",
+      "Zeynep"
+    ]
+  },
+  "voices": {
+    "male": [
+      "tr-TR-AhmetNeural"
+    ],
+    "female": [
+      "tr-TR-EmelNeural"
+    ]
+  }
+}
