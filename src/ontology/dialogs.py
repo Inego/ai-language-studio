@@ -54,8 +54,11 @@ class Dialogs:
         main_description = random.choice(main_interlocutor.descriptions)
         other_relation = random.choice(main_interlocutor.other[other_type])
 
-        result = (f"Write a short dialog in {locale.locale_name} between {main_name}, a {main_description}, "
-                  f"and {other_relation} {other_name}.")
+        result = (f"Write a dialog in {locale.locale_name} between {main_name}, a {main_description}, "
+                  f'and {other_relation} {other_name}. Start each utterance with the name only ("{main_name}:", "{other_name}:").')
+
+        if locale.special_note:
+            result = result + ". " + locale.special_note
 
         assigned_voice_map = locale.assign_voices(
             [

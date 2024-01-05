@@ -5,12 +5,23 @@ from ontology.Gender import Gender
 
 
 class Locale:
-    def __init__(self, locale_name: str, male_names: list[str], female_names: list[str], male_voices: list[str], female_voices: list[str]):
+    def __init__(
+            self,
+            locale_name: str,
+            male_names: list[str],
+            female_names: list[str],
+            male_voices: list[str],
+            female_voices: list[str],
+            special_note: str,
+            heavy_generation: bool
+    ):
         self.locale_name = locale_name
         self.male_names = male_names
         self.female_names = female_names
         self.male_voices = male_voices
         self.female_voices = female_voices
+        self.special_note = special_note
+        self.heavy_generation = heavy_generation
 
     def pick_random_name(self, gender, exclusions=None):
         if exclusions is None:
@@ -27,7 +38,17 @@ class Locale:
         female_names = data['names']['female']
         male_voices = data['voices']['male']
         female_voices = data['voices']['female']
-        return Locale(locale_name, male_names, female_names, male_voices, female_voices)
+        special_note = data.get('special_note')
+        heavy_generation = data.get('heavy_generation', False)
+        return Locale(
+            locale_name,
+            male_names,
+            female_names,
+            male_voices,
+            female_voices,
+            special_note,
+            heavy_generation
+        )
 
     @staticmethod
     def parse_from_file_name(file_name):

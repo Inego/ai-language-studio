@@ -8,13 +8,14 @@ from openai import OpenAI
 from ontology.Locale import Locale
 from ontology.dialogs import Dialogs
 from state.Dialog import Dialog
-from utils.openai_utils import stream_chat_completion, MODEL_BASIC
+from utils.openai_utils import stream_chat_completion, MODEL_BASIC, MODEL_HEAVY
 
 
 class GenerateDialogModal(QDialog):
-    def __init__(self, openai_client: OpenAI, dialogs: Dialogs, locale: Locale, parent=None):
+    def __init__(self, openai_client: OpenAI, dialogs: Dialogs, locale: Locale, second_locale: Locale, parent=None):
         super(GenerateDialogModal, self).__init__(parent)
         self.locale = locale
+        self.second_locale = second_locale
         self.dialogs = dialogs
         self.openai_client = openai_client
         self.result: Optional[Dialog] = None
@@ -67,7 +68,7 @@ class GenerateDialogModal(QDialog):
     def generate(self):
         self.stacked_widget.setCurrentIndex(1)
 
-        thread = GenerateDialogThread(self.openai_client, self.dialogs, self.locale, self)
+        thread = GenerateDialogThread(self.openai_client, self.dialogs, self.locale, self.second_locale, self)
         thread.new_stage_signal.connect(self.add_stage_name)
         thread.update_count_signal.connect(self.add_stage_current_count)
         thread.finished_signal.connect(self.finished)
@@ -79,21 +80,23 @@ class GenerateDialogThread(QThread):
     update_count_signal = pyqtSignal(int)
     finished_signal = pyqtSignal(Dialog)
 
-    def __init__(self, openai_client: OpenAI, dialogs: Dialogs, locale: Locale, parent=None):
+    def __init__(self, openai_client: OpenAI, dialogs: Dialogs, locale: Locale, second_locale: Locale, parent=None):
         super(GenerateDialogThread, self).__init__(parent)
         self.locale = locale
+        self.second_locale = second_locale
         self.dialogs = dialogs
         self.openai_client = openai_client
 
     def run(self):
         language_name = self.locale.locale_name
+        second_language_name = self.second_locale.locale_name
         self.new_stage_signal.emit(f"Generating dialog in {language_name}")
 
         initial_prompt = self.dialogs.generate_initial_prompt(self.locale)
 
         dialog_orig = stream_chat_completion(
             self.openai_client,
-            MODEL_BASIC,
+            MODEL_HEAVY if self.locale.heavy_generation else MODEL_BASIC,
             [{"role": "user", "content": initial_prompt.prompt}],
             1,
             lambda x: self.update_count_signal.emit(x)
@@ -110,8 +113,8 @@ class GenerateDialogThread(QThread):
                 "role": "user",
                 "content": f"Given the following dialog in {language_name}:"
                            f'\n```\n{dialog_orig}\n```\n'
-                           f'generate a JSON list of each sentence with its English translation in the following format: '
-                           f'`[[<who>, <{language_name}>, <English>], ...]`.'
+                           f'generate a JSON list of each sentence from this dialog with its {second_language_name} translation in the following format: '
+                           f'`[[<who>, <{language_name} sentence>, <{second_language_name} translation>], ...]`.'
             }],
             0,
             lambda x: self.update_count_signal.emit(x)

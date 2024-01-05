@@ -1,0 +1,57 @@
+{
+  "name": "Serbian",
+  "names": {
+    "male": [
+      "Aleksandar",
+      "Nikola",
+      "Marko",
+      "Petar",
+      "Ivan",
+      "Luka",
+      "Filip",
+      "Stefan",
+      "Milan",
+      "Mihajlo",
+      "Dimitrije",
+      "Vladimir",
+      "Jovan",
+      "Matej",
+      "Bogdan",
+      "Viktor",
+      "Igor",
+      "Zoran",
+      "Goran",
+      "Dragan"
+    ],
+    "female": [
+      "Milica",
+      "Jovana",
+      "Dragana",
+      "Marija",
+      "Ana",
+      "Jelena",
+      "Katarina",
+      "Sofija",
+      "Nina",
+      "Ivana",
+      "Danijela",
+      "Biljana",
+      "Vesna",
+      "Dijana",
+      "Tamara",
+      "Nataša",
+      "Snežana",
+      "Aleksandra",
+      "Ljiljana",
+      "Sanja"
+    ]
+  },
+  "voices": {
+    "male": [
+      "sr-RS-NicholasNeural"
+    ],
+    "female": [
+      "sr-RS-SophieNeural"
+    ]
+  }
+}

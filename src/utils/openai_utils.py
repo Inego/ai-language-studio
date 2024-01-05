@@ -2,6 +2,7 @@ from dotenv import load_dotenv
 from openai import OpenAI
 
 MODEL_BASIC = "gpt-3.5-turbo-1106"
+MODEL_HEAVY = "gpt-4-1106-preview"
 
 
 def stream_chat_completion(client: OpenAI, model_name: str, messages: list, temperature: float, stream_callback) -> str:

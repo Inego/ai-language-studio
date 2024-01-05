@@ -4,14 +4,16 @@ from PyQt5.QtCore import Qt, pyqtSignal
 from PyQt5.QtWidgets import QWidget, QVBoxLayout, QHBoxLayout, QPushButton, QLabel, QSizePolicy
 
 from service.AudioPlayer import AudioPlayer
+from state.Learning import Learning
 from state.Node import Node
 
 
 class UiContext:
-    def __init__(self, audio_player: AudioPlayer, trigger_save, tree_navigation_callback):
+    def __init__(self, audio_player: AudioPlayer, trigger_save, tree_navigation_callback, learning: Learning):
         self.audio_player = audio_player
         self.trigger_save = trigger_save
         self.tree_navigation_callback = tree_navigation_callback
+        self.learning = learning
 
 
 class NodeWidget(QWidget):
@@ -20,7 +22,7 @@ class NodeWidget(QWidget):
     def __init__(self, node: Node, ui_context: UiContext):
         super().__init__()
         self.node = node
-        self.node_creation_context = ui_context
+        self.ui_context = ui_context
         self.tree_navigation_signal.connect(ui_context.tree_navigation_callback)
         self.main_layout = QVBoxLayout()
 

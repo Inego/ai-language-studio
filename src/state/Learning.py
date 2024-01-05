@@ -6,14 +6,16 @@ from state.RootNode import RootNode
 
 
 class Learning:
-    def __init__(self, language, root_node: Node):
+    def __init__(self, language: str, second_language: str, root_node: Node):
         self.language = language
+        self.second_language = second_language
         self.root_node = root_node
 
     @classmethod
     def from_data(cls, data):
         return cls(
             data["language"],
+            data.get("secondLanguage", "en"),
             parse_node(data["root"])
         )
 
@@ -36,6 +38,7 @@ class Learning:
     def prepare_json_object(self):
         return {
             "language": self.language,
+            "secondLanguage": self.second_language,
             "root": self.root_node.prepare_json_object()
         }
 

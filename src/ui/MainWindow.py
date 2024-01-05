@@ -27,8 +27,12 @@ class MainWindow(QWidget):
         self.save_service.connect(self.save_learning)
 
         self.dialogs = Dialogs.parse_from_json_file("../../data/dialogs.json")
+
         locale_name = self.learning.language
         self.locale = Locale.parse_from_file_name(f"../../data/{locale_name}.json")
+
+        second_locale_name = self.learning.second_language
+        self.second_locale = Locale.parse_from_file_name(f"../../data/{second_locale_name}.json")
 
         self.openai_client = OpenAI()
         self.audio_player = AudioPlayer(self.openai_client, self)
@@ -52,7 +56,7 @@ class MainWindow(QWidget):
         self.build_from_node_path()
 
     def open_generate_dialog_modal(self):
-        dialog = GenerateDialogModal(self.openai_client, self.dialogs, self.locale, parent=self)
+        dialog = GenerateDialogModal(self.openai_client, self.dialogs, self.locale, self.second_locale, parent=self)
         result = dialog.exec_()
         if result == QDialog.Accepted:
             dialog = dialog.result
@@ -71,7 +75,7 @@ class MainWindow(QWidget):
 
         clear_layout(self.dynamic_layout)
 
-        node_creation_context = UiContext(self.audio_player, self.trigger_save, self.save_and_rebuild)
+        node_creation_context = UiContext(self.audio_player, self.trigger_save, self.save_and_rebuild, self.learning)
 
         learning = self.learning
         current_node = learning.root_node

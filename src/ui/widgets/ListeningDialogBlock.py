@@ -1,6 +1,7 @@
 from PyQt5.QtCore import Qt
 from PyQt5.QtWidgets import QLabel, QPushButton, QHBoxLayout, QTextEdit, QSizePolicy
 
+from languages.serbian import latin_to_cyrillic
 from state.Dialog import Dialog
 from ui.widgets.NodeWidget import NodeWidget, UiContext
 
@@ -59,6 +60,8 @@ class ListeningDialogBlock(NodeWidget):
         button_layout.addWidget(button_show)
         button_layout.addStretch(1)  # Add stretch after buttons
 
+        self.update_navigation_enabled()
+
         # Add the button layout to the main layout
         self.layout().addLayout(button_layout)
 
@@ -71,10 +74,9 @@ class ListeningDialogBlock(NodeWidget):
     def navigate(self, hide=False):
         if hide:
             self.show_level = 0
-            self.node_creation_context.trigger_save()
+            self.ui_context.trigger_save()
 
-            self.button_previous.setEnabled(self.dialog.current_position > 0)
-            self.button_next.setEnabled(self.dialog.current_position < len(self.dialog.content) - 1)
+            self.update_navigation_enabled()
 
             self.play_dialog()
 
@@ -82,6 +84,10 @@ class ListeningDialogBlock(NodeWidget):
         self.label_who.setText(sentence.who)
         self.text_edit_src.setHtml("..." if self.show_level == 0 else sentence.sentence)
         self.label_translation.setText("..." if self.show_level < 2 else sentence.translation)
+
+    def update_navigation_enabled(self):
+        self.button_previous.setEnabled(self.dialog.current_position > 0)
+        self.button_next.setEnabled(self.dialog.current_position < len(self.dialog.content) - 1)
 
     def get_current_sentence(self):
         current_position = self.dialog.current_position
@@ -100,7 +106,10 @@ class ListeningDialogBlock(NodeWidget):
         sentence = self.get_current_sentence()
         # Get corresponding interlocutor voice from the Dialog
         interlocutor = self.dialog.get_interlocutor(sentence.who)
-        self.node_creation_context.audio_player.play(interlocutor.voice, sentence.sentence)
+        text_to_play = sentence.sentence
+        if self.ui_context.learning.language == 'sr':
+            text_to_play = latin_to_cyrillic(text_to_play)
+        self.ui_context.audio_player.play(interlocutor.voice, text_to_play)
 
     def reveal(self):
         if self.show_level < 2:
