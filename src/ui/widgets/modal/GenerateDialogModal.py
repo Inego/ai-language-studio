@@ -12,14 +12,15 @@ from utils.openai_utils import stream_chat_completion, MODEL_BASIC, MODEL_HEAVY
 
 
 class GenerateDialogModal(QDialog):
-    def __init__(self, openai_client: OpenAI, dialogs: Dialogs, locale: Locale, second_locale: Locale, parent=None):
+    def __init__(self, openai_client: OpenAI, dialogs: Dialogs, locale: Locale, second_locale: Locale, dialog_type: str, parent=None):
         super(GenerateDialogModal, self).__init__(parent)
         self.locale = locale
         self.second_locale = second_locale
+        self.dialog_type = dialog_type
         self.dialogs = dialogs
         self.openai_client = openai_client
         self.result: Optional[Dialog] = None
-        self.setWindowTitle('Generate Dialog')
+        self.setWindowTitle(f'Generate Dialog ({dialog_type})')
 
         self.stacked_widget = QStackedWidget(self)
 
@@ -68,7 +69,7 @@ class GenerateDialogModal(QDialog):
     def generate(self):
         self.stacked_widget.setCurrentIndex(1)
 
-        thread = GenerateDialogThread(self.openai_client, self.dialogs, self.locale, self.second_locale, self)
+        thread = GenerateDialogThread(self.openai_client, self.dialogs, self.locale, self.second_locale, self.dialog_type, self)
         thread.new_stage_signal.connect(self.add_stage_name)
         thread.update_count_signal.connect(self.add_stage_current_count)
         thread.finished_signal.connect(self.finished)
@@ -80,10 +81,11 @@ class GenerateDialogThread(QThread):
     update_count_signal = pyqtSignal(int)
     finished_signal = pyqtSignal(Dialog)
 
-    def __init__(self, openai_client: OpenAI, dialogs: Dialogs, locale: Locale, second_locale: Locale, parent=None):
+    def __init__(self, openai_client: OpenAI, dialogs: Dialogs, locale: Locale, second_locale: Locale, dialog_type: str, parent=None):
         super(GenerateDialogThread, self).__init__(parent)
         self.locale = locale
         self.second_locale = second_locale
+        self.dialog_type = dialog_type
         self.dialogs = dialogs
         self.openai_client = openai_client
 
@@ -124,6 +126,7 @@ class GenerateDialogThread(QThread):
 
         content = json.loads(aligned)
         result = Dialog.from_data({
+            "dialogType": self.dialog_type,
             "interlocutors": initial_prompt.interlocutors,
             "currentPosition": 0,
             "content": content

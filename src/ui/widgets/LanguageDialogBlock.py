@@ -6,7 +6,7 @@ from state.Dialog import Dialog
 from ui.widgets.NodeWidget import NodeWidget, UiContext
 
 
-class ListeningDialogBlock(NodeWidget):
+class LanguageDialogWidget(NodeWidget):
     def __init__(self, dialog: Dialog, ui_context: UiContext):
         super().__init__(dialog, ui_context)
 
@@ -78,12 +78,28 @@ class ListeningDialogBlock(NodeWidget):
 
             self.update_navigation_enabled()
 
-            self.play_dialog()
+            if self.dialog.dialog_type == "listen":
+                self.play_dialog()
 
         sentence = self.get_current_sentence()
         self.label_who.setText(sentence.who)
-        self.text_edit_src.setHtml("..." if self.show_level == 0 else sentence.sentence)
-        self.label_translation.setText("..." if self.show_level < 2 else sentence.translation)
+        self.text_edit_src.setHtml(self.determine_main_text(sentence))
+        self.label_translation.setText(self.determine_second_text(sentence))
+
+    def determine_main_text(self, sentence):
+        if self.dialog.dialog_type == "listen":
+            return "..." if self.show_level == 0 else sentence.sentence
+        elif self.dialog.dialog_type == "speak":
+            return sentence.translation
+
+        raise ValueError(f"Can't determine main text for {self.dialog.dialog_type}")
+
+    def determine_second_text(self, sentence):
+        if self.dialog.dialog_type == "listen":
+            return "..." if self.show_level < 2 else sentence.translation
+        elif self.dialog.dialog_type == "speak":
+            return "..." if self.show_level < 1 else sentence.sentence
+        raise ValueError(f"Can't determine second text for {self.dialog.dialog_type}")
 
     def update_navigation_enabled(self):
         self.button_previous.setEnabled(self.dialog.current_position > 0)
@@ -110,6 +126,13 @@ class ListeningDialogBlock(NodeWidget):
         if self.ui_context.learning.language == 'sr':
             text_to_play = latin_to_cyrillic(text_to_play)
         self.ui_context.audio_player.play(interlocutor.voice, text_to_play)
+
+    def get_max_show_level(self):
+        if self.dialog.dialog_type == "listen":
+            return 2
+        elif self.dialog.dialog_type == "speak":
+            return 1
+        raise ValueError(f"Can't get max show level for {self.dialog.dialog_type}")
 
     def reveal(self):
         if self.show_level < 2:

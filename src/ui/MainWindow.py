@@ -11,7 +11,7 @@ from service.AudioPlayer import AudioPlayer
 from service.SaveService import SaveServiceThread
 from state.Dialog import Dialog
 from state.Learning import Learning
-from ui.widgets.ListeningDialogBlock import ListeningDialogBlock
+from ui.widgets.LanguageDialogBlock import LanguageDialogWidget
 from ui.widgets.NodeWidget import UiContext
 from ui.widgets.modal.GenerateDialogModal import GenerateDialogModal
 from ui.widgets.widget_utils import clear_layout
@@ -43,9 +43,13 @@ class MainWindow(QWidget):
 
         button_layout = QHBoxLayout()
 
-        button_show = QPushButton("Create dialog")
-        button_show.clicked.connect(self.open_generate_dialog_modal)
-        button_layout.addWidget(button_show)
+        button_dialog_listen = QPushButton("Dialog (listen)")
+        button_dialog_listen.clicked.connect(self.open_generate_dialog_modal_listen)
+        button_layout.addWidget(button_dialog_listen)
+
+        button_dialog_speak = QPushButton("Dialog (speak)")
+        button_dialog_speak.clicked.connect(self.open_generate_dialog_modal_speak)
+        button_layout.addWidget(button_dialog_speak)
 
         # Add the horizontal layout with the buttons to the main layout
         main_layout.addLayout(button_layout)
@@ -55,8 +59,15 @@ class MainWindow(QWidget):
 
         self.build_from_node_path()
 
-    def open_generate_dialog_modal(self):
-        dialog = GenerateDialogModal(self.openai_client, self.dialogs, self.locale, self.second_locale, parent=self)
+    def open_generate_dialog_modal_listen(self):
+        self.open_generate_dialog_modal("listen")
+
+    def open_generate_dialog_modal_speak(self):
+        self.open_generate_dialog_modal("speak")
+
+    def open_generate_dialog_modal(self, dialog_type):
+        dialog = GenerateDialogModal(self.openai_client, self.dialogs, self.locale, self.second_locale, dialog_type,
+                                     parent=self)
         result = dialog.exec_()
         if result == QDialog.Accepted:
             dialog = dialog.result
@@ -86,7 +97,7 @@ class MainWindow(QWidget):
 
     def create_widget(self, current_node, node_creation_context: UiContext):
         if isinstance(current_node, Dialog):
-            return ListeningDialogBlock(current_node, node_creation_context)
+            return LanguageDialogWidget(current_node, node_creation_context)
 
     def trigger_save(self):
         self.save_service.trigger_save()

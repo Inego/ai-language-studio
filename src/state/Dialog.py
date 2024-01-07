@@ -19,13 +19,15 @@ class Dialog(Node):
     def prepare_specific_json_object(self):
         return {
             "type": "dialog",
+            "dialogType": self.dialog_type,
             "interlocutors": [[i.name, i.gender, i.voice] for i in self.interlocutors],
             "currentPosition": self.current_position,
             "content": [[s.who, s.sentence, s.translation] for s in self.content]
         }
 
-    def __init__(self, interlocutors: list[Interlocutor], current_position, content: list[Sentence]):
+    def __init__(self, dialog_type: str, interlocutors: list[Interlocutor], current_position, content: list[Sentence]):
         super().__init__()
+        self.dialog_type = dialog_type
         self.interlocutors = interlocutors
         self.current_position = current_position
         self.content = content
@@ -34,7 +36,7 @@ class Dialog(Node):
     def from_data(cls, data):
         interlocutors = [Interlocutor(*interlocutor) for interlocutor in data['interlocutors']]
         content = [Sentence(*sentence) for sentence in data['content']]
-        return cls(interlocutors, data['currentPosition'], content)
+        return cls(data.get("dialogType", "speak"), interlocutors, data['currentPosition'], content)
 
     def navigate(self, delta):
         new_current_position = self.current_position + delta
