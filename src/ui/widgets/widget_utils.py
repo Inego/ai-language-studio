@@ -1,4 +1,8 @@
+from PyQt5.QtGui import QFont
 from PyQt5.QtWidgets import QLayout
+
+large_qedit_font = QFont()
+large_qedit_font.setPointSize(12)
 
 
 def clear_layout(layout: QLayout):

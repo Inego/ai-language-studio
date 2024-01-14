@@ -2,7 +2,7 @@ import json
 from typing import Optional
 
 from PyQt5.QtCore import QThread, pyqtSignal
-from PyQt5.QtWidgets import QDialog, QStackedWidget, QVBoxLayout, QPushButton, QHBoxLayout, QLabel, QWidget
+from PyQt5.QtWidgets import QDialog, QStackedWidget, QVBoxLayout, QPushButton, QHBoxLayout, QLabel, QWidget, QCheckBox
 from openai import OpenAI
 
 from ontology.Locale import Locale
@@ -27,8 +27,12 @@ class GenerateDialogModal(QDialog):
         self.first_panel = QDialog()
         self.generate_button = QPushButton("Generate")
         self.generate_button.clicked.connect(self.generate)
+        self.heavy_model_checkbox = QCheckBox("Heavy model", self)
+
         first_panel_layout = QVBoxLayout(self.first_panel)
+        first_panel_layout.addWidget(self.heavy_model_checkbox)  # Add the checkbox to the layout
         first_panel_layout.addWidget(self.generate_button)
+
         self.stacked_widget.addWidget(self.first_panel)
 
         self.second_panel = QDialog()
@@ -69,7 +73,15 @@ class GenerateDialogModal(QDialog):
     def generate(self):
         self.stacked_widget.setCurrentIndex(1)
 
-        thread = GenerateDialogThread(self.openai_client, self.dialogs, self.locale, self.second_locale, self.dialog_type, self)
+        thread = GenerateDialogThread(
+            self.openai_client,
+            self.dialogs,
+            self.locale,
+            self.second_locale,
+            self.dialog_type,
+            self.heavy_model_checkbox.isChecked(),
+            self
+        )
         thread.new_stage_signal.connect(self.add_stage_name)
         thread.update_count_signal.connect(self.add_stage_current_count)
         thread.finished_signal.connect(self.finished)
@@ -81,8 +93,9 @@ class GenerateDialogThread(QThread):
     update_count_signal = pyqtSignal(int)
     finished_signal = pyqtSignal(Dialog)
 
-    def __init__(self, openai_client: OpenAI, dialogs: Dialogs, locale: Locale, second_locale: Locale, dialog_type: str, parent=None):
+    def __init__(self, openai_client: OpenAI, dialogs: Dialogs, locale: Locale, second_locale: Locale, dialog_type: str, use_heavy_model: bool, parent=None):
         super(GenerateDialogThread, self).__init__(parent)
+        self.use_heavy_model = use_heavy_model
         self.locale = locale
         self.second_locale = second_locale
         self.dialog_type = dialog_type
@@ -98,7 +111,7 @@ class GenerateDialogThread(QThread):
 
         dialog_orig = stream_chat_completion(
             self.openai_client,
-            MODEL_HEAVY if self.locale.heavy_generation else MODEL_BASIC,
+            MODEL_HEAVY if self.locale.heavy_generation or self.use_heavy_model else MODEL_BASIC,
             [{"role": "user", "content": initial_prompt.prompt}],
             1,
             lambda x: self.update_count_signal.emit(x)

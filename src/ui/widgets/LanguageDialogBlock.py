@@ -4,6 +4,7 @@ from PyQt5.QtWidgets import QLabel, QPushButton, QHBoxLayout, QTextEdit, QSizePo
 from languages.serbian import latin_to_cyrillic
 from state.Dialog import Dialog
 from ui.widgets.NodeWidget import NodeWidget, UiContext
+from ui.widgets.widget_utils import large_qedit_font
 
 
 class LanguageDialogWidget(NodeWidget):
@@ -16,13 +17,19 @@ class LanguageDialogWidget(NodeWidget):
         self.label_who = QLabel("<...>")
         self.text_edit_src = QTextEdit()
         self.text_edit_src.setReadOnly(True)
-        self.label_translation = QLabel("")
+        self.text_edit_src.setFont(large_qedit_font)
+        self.text_edit_translation = QTextEdit()
+        self.text_edit_translation.setReadOnly(True)
+        self.text_edit_translation.setFont(large_qedit_font)
         self.show_level = 0
         self.navigate()
 
+        self.text_edit_src.setMinimumSize(800, 10)
+        self.text_edit_translation.setMinimumSize(800, 10)
+
         self.main_layout.addWidget(self.label_who)
         self.main_layout.addWidget(self.text_edit_src)
-        self.main_layout.addWidget(self.label_translation)
+        self.main_layout.addWidget(self.text_edit_translation)
 
         # Set the main layout for the widget
         self.setLayout(self.main_layout)
@@ -84,7 +91,7 @@ class LanguageDialogWidget(NodeWidget):
         sentence = self.get_current_sentence()
         self.label_who.setText(sentence.who)
         self.text_edit_src.setHtml(self.determine_main_text(sentence))
-        self.label_translation.setText(self.determine_second_text(sentence))
+        self.text_edit_translation.setHtml(self.determine_second_text(sentence))
 
     def determine_main_text(self, sentence):
         if self.dialog.dialog_type == "listen":
