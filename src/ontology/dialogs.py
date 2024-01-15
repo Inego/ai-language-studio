@@ -15,8 +15,9 @@ class InterlocutorDefinition:
 
 
 class DialogPreliminary:
-    def __init__(self, prompt: str, interlocutors: list[list]):
-        self.prompt = prompt
+    def __init__(self, prompt_start: str, prompt_end: str, interlocutors: list[list]):
+        self.prompt = prompt_start
+        self.prompt_end = prompt_end
         self.interlocutors = interlocutors
 
 
@@ -54,11 +55,14 @@ class Dialogs:
         main_description = random.choice(main_interlocutor.descriptions)
         other_relation = random.choice(main_interlocutor.other[other_type])
 
-        result = (f"Write a dialog in {locale.locale_name} between {main_name}, a {main_description}, "
-                  f'and {other_relation} {other_name}. Start each utterance with the name only ("{main_name}:", "{other_name}:").')
+        prompt_start = (f"Write a dialog between {main_name}, a {main_description}, "
+                  f'and {other_relation} {other_name}.')
+
+        prompt_end = (f'The dialog is in {locale.locale_name}. '
+                      f'Start each utterance with the name only ("{main_name}:", "{other_name}:").')
 
         if locale.special_note:
-            result = result + ". " + locale.special_note
+            prompt_start = prompt_start + ". " + locale.special_note
 
         assigned_voice_map = locale.assign_voices(
             [
@@ -67,10 +71,13 @@ class Dialogs:
             ]
         )
 
-        return DialogPreliminary(result, [
-            [main_name, main_interlocutor.gender.to_char(), assigned_voice_map[main_name]],
-            [other_name, other_interlocutor.gender.to_char(), assigned_voice_map[other_name]],
-        ])
+        return DialogPreliminary(
+            prompt_start,
+            prompt_end,
+            [
+                [main_name, main_interlocutor.gender.to_char(), assigned_voice_map[main_name]],
+                [other_name, other_interlocutor.gender.to_char(), assigned_voice_map[other_name]],
+            ])
 
     def random_interlocutor(self) -> InterlocutorDefinition:
         interlocutor_key = random.choice(self.interlocutor_key_list)

@@ -156,6 +156,10 @@ class GenerateDialogThread(QThread):
         prompt = self.initial_prompt.prompt
         if self.prompt_details:
             prompt += " " + self.prompt_details
+        prompt += " " + self.initial_prompt.prompt_end
+
+        print(prompt)
+
         dialog_orig = stream_chat_completion(
             self.openai_client,
             MODEL_HEAVY if self.locale.heavy_generation or self.use_heavy_model else MODEL_BASIC,
