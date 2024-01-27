@@ -17,6 +17,7 @@ class AudioPlayer:
         self.audio_buffer = QBuffer()
 
     def on_media_status_changed(self, status):
+        # print(status)
         if status == QMediaPlayer.LoadedMedia:
             # The media is loaded and ready to be played
             self.media_player.play()

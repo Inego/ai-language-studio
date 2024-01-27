@@ -2,14 +2,16 @@ import json
 import random
 from typing import List, Dict
 
+from ontology.Age import Age
 from ontology.Gender import Gender
 from ontology.Locale import Locale
 
 
 class InterlocutorDefinition:
-    def __init__(self, name: str, gender: Gender, descriptions: List[str], other: Dict[str, List[str]]):
+    def __init__(self, name: str, gender: Gender, age: Age, descriptions: List[str], other: Dict[str, List[str]]):
         self.name = name
         self.gender = gender
+        self.age = age
         self.descriptions = descriptions
         self.other = other
 
@@ -26,14 +28,22 @@ class Dialogs:
         self.interlocutors = interlocutors
         self.interlocutor_key_list = list(self.interlocutors.keys())
 
+        self.weighted_keys = []
+        for key in self.interlocutor_key_list:
+            interlocutor = self.interlocutors[key]
+            # Adults are twice as likely to be picked compared to children
+            weight = 2 if interlocutor.age == Age.ADULT else 1
+            self.weighted_keys.extend([key] * weight)
+
     @classmethod
     def parse_from_json_data(cls, json_data):
         interlocutors = dict()
         for interlocutor_name, interlocutor_data in json_data['interlocutors'].items():
             gender = Gender(interlocutor_data['gender'])
+            age = Age(interlocutor_data['age'])
             descriptions = interlocutor_data['descriptions']
             other = interlocutor_data['other']
-            interlocutor = InterlocutorDefinition(interlocutor_name, gender, descriptions, other)
+            interlocutor = InterlocutorDefinition(interlocutor_name, gender, age, descriptions, other)
             interlocutors[interlocutor_name] = interlocutor
         return Dialogs(interlocutors)
 
@@ -80,8 +90,8 @@ class Dialogs:
             ])
 
     def random_interlocutor(self) -> InterlocutorDefinition:
-        interlocutor_key = random.choice(self.interlocutor_key_list)
-        return self.interlocutors[interlocutor_key]
+        selected_key = random.choice(self.weighted_keys)
+        return self.interlocutors[selected_key]
 
 
 def do_main():

@@ -2,6 +2,7 @@
   "interlocutors": {
     "man": {
       "gender": "male",
+      "age": "adult",
       "descriptions": [
         "office worker",
         "policeman",
@@ -43,6 +44,7 @@
     },
     "woman": {
       "gender": "female",
+      "age": "adult",
       "descriptions": [
         "office worker",
         "journalist",
@@ -80,6 +82,7 @@
     },
     "boy": {
       "gender": "male",
+      "age": "child",
       "descriptions": [
         "schoolboy"
       ],
@@ -108,6 +111,7 @@
     },
     "girl": {
       "gender": "female",
+      "age": "child",
       "descriptions": [
         "schoolgirl"
       ],
