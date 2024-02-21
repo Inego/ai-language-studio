@@ -1,0 +1,63 @@
+{
+  "name": "Chinese",
+  "names": {
+    "male": [
+      "李伟",
+      "王强",
+      "张伟",
+      "刘洋",
+      "陈军",
+      "杨洋",
+      "黄勇",
+      "吴刚",
+      "赵勇",
+      "周杰",
+      "徐浩",
+      "孙强",
+      "马超",
+      "朱辉",
+      "胡杰",
+      "郭峰",
+      "何杰",
+      "高峰",
+      "罗磊",
+      "林鹏"
+    ],
+    "female": [
+      "王芳",
+      "李娜",
+      "张敏",
+      "刘洋",
+      "陈静",
+      "杨丽",
+      "吴静",
+      "赵敏",
+      "周丽",
+      "徐娜",
+      "孙静",
+      "马丽",
+      "朱敏",
+      "胡丽",
+      "郭娜",
+      "何洋",
+      "高芳",
+      "林娜",
+      "罗敏",
+      "郑丽"
+    ]
+  },
+  "voices": {
+    "male": [
+      "zh-CN-YunfengNeural",
+      "zh-CN-YunyangNeural",
+      "zh-CN-YunzeNeural"
+    ],
+    "female": [
+      "zh-CN-XiaochenNeural",
+      "zh-CN-XiaoxiaoNeural",
+      "zh-CN-XiaohanNeural",
+      "zh-CN-XiaomengNeural",
+      "zh-CN-XiaomoNeural"
+    ]
+  }
+}

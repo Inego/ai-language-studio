@@ -2,7 +2,8 @@ from state.Node import Node
 
 
 class Interlocutor:
-    def __init__(self, name, gender, voice):
+    def __init__(self, type, name, gender, voice):
+        self.type = type
         self.name = name
         self.gender = gender
         self.voice = voice
@@ -20,7 +21,7 @@ class Dialog(Node):
         return {
             "type": "dialog",
             "dialogType": self.dialog_type,
-            "interlocutors": [[i.name, i.gender, i.voice] for i in self.interlocutors],
+            "interlocutors": [[i.type, i.name, i.gender, i.voice] for i in self.interlocutors],
             "currentPosition": self.current_position,
             "content": [[s.who, s.sentence, s.translation] for s in self.content]
         }

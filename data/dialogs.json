@@ -5,6 +5,7 @@
       "age": "adult",
       "descriptions": [
         "office worker",
+        "university student",
         "policeman",
         "journalist",
         "lawyer",
@@ -17,9 +18,12 @@
           "his father",
           "his son",
           "his friend",
+          "his roommate",
           "his neighbor",
           "his boss",
-          "his colleague"
+          "his colleague",
+          "a taxi driver",
+          "a market seller"
         ],
         "woman": [
           "his younger sister",
@@ -28,9 +32,11 @@
           "his mother",
           "his wife",
           "his girlfriend",
+          "his roommate",
           "his neighbor",
           "his boss",
-          "his colleague"
+          "his colleague",
+          "a market seller"
         ],
         "boy": [
           "his younger brother",
@@ -46,6 +52,7 @@
       "gender": "female",
       "age": "adult",
       "descriptions": [
+        "university student",
         "office worker",
         "journalist",
         "lawyer",
@@ -58,17 +65,23 @@
           "her father",
           "her son",
           "her boyfriend",
+          "her roommate",
+          "her husband",
           "her neighbor",
           "her boss",
-          "her colleague"
+          "her colleague",
+          "a taxi driver",
+          "a market seller"
         ],
         "woman": [
           "her younger sister",
           "her older sister",
           "her friend",
           "her neighbor",
+          "her roommate",
           "her boss",
-          "her colleague"
+          "her colleague",
+          "a market seller"
         ],
         "boy": [
           "her younger brother",

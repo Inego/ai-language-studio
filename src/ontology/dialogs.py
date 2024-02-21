@@ -57,6 +57,7 @@ class Dialogs:
         main_interlocutor = self.random_interlocutor()
         other_interlocutor = self.random_interlocutor()
 
+        main_type = main_interlocutor.name
         other_type = other_interlocutor.name
 
         main_name = locale.pick_random_name(main_interlocutor.gender)
@@ -85,8 +86,8 @@ class Dialogs:
             prompt_start,
             prompt_end,
             [
-                [main_name, main_interlocutor.gender.to_char(), assigned_voice_map[main_name]],
-                [other_name, other_interlocutor.gender.to_char(), assigned_voice_map[other_name]],
+                [main_type, main_name, main_interlocutor.gender.to_char(), assigned_voice_map[main_name]],
+                [other_type, other_name, other_interlocutor.gender.to_char(), assigned_voice_map[other_name]],
             ])
 
     def random_interlocutor(self) -> InterlocutorDefinition:

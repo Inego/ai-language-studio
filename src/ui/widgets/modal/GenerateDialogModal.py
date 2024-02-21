@@ -179,8 +179,8 @@ class GenerateDialogThread(QThread):
                 "role": "user",
                 "content": f"Given the following dialog in {language_name}:"
                            f'\n```\n{dialog_orig}\n```\n'
-                           f'generate a JSON list of each utterance from this dialog with its {second_language_name} translation in the following format: '
-                           f'`[[<who>, <{language_name} utterance>, <{second_language_name} translation>], ...]`.'
+                           f'output a JSON list of each utterance from this dialog with its {second_language_name} translation in the following format: '
+                           f'`[[<who>, <{language_name} utterance>, <{second_language_name} translation>], ...]`. Do not use Markdown!'
             }],
             0,
             lambda x: self.update_count_signal.emit(x)

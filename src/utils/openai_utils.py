@@ -1,7 +1,8 @@
 from dotenv import load_dotenv
 from openai import OpenAI
 
-MODEL_BASIC = "gpt-3.5-turbo-1106"
+# MODEL_BASIC = "gpt-3.5-turbo-1106"
+MODEL_BASIC = "gpt-3.5-turbo-0125"
 MODEL_HEAVY = "gpt-4-0125-preview"
 
 
