@@ -1,0 +1,57 @@
+{
+  "name": "Bosnian",
+  "names": {
+    "male": [
+      "Adnan",
+      "Amar",
+      "Dino",
+      "Edin",
+      "Emir",
+      "Faris",
+      "Haris",
+      "Ismar",
+      "Jasmin",
+      "Kenan",
+      "Mirza",
+      "Nedim",
+      "Omer",
+      "Rasim",
+      "Samir",
+      "Tarik",
+      "Vedad",
+      "Zlatan",
+      "Bojan",
+      "Damir"
+    ],
+    "female": [
+      "Aida",
+      "Amra",
+      "Azra",
+      "Dženita",
+      "Emina",
+      "Fatima",
+      "Hana",
+      "Indira",
+      "Jasmina",
+      "Lejla",
+      "Maja",
+      "Nermina",
+      "Selma",
+      "Senada",
+      "Tajra",
+      "Una",
+      "Vedrana",
+      "Zerina",
+      "Sabina",
+      "Adna"
+    ]
+  },
+  "voices": {
+    "male": [
+      "bs-BA-GoranNeural"
+    ],
+    "female": [
+      "bs-BA-VesnaNeural"
+    ]
+  }
+}
