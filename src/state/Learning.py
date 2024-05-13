@@ -9,11 +9,12 @@ from state.WordCard import WordCard
 
 
 class Learning:
-    def __init__(self, language: str, second_language: str, root_node: Node, word_cards: List[WordCard]):
+    def __init__(self, language: str, second_language: str, root_node: Node, word_cards_focused: List[WordCard], word_cards_main: List[WordCard]):
         self.language = language
         self.second_language = second_language
         self.root_node = root_node
-        self.word_cards = word_cards
+        self.word_cards_focused = word_cards_focused
+        self.word_cards_main = word_cards_main
 
     @classmethod
     def from_data(cls, data):
@@ -21,7 +22,8 @@ class Learning:
             data["language"],
             data.get("secondLanguage", "en"),
             parse_node(data["root"]),
-            [WordCard(x[0], x[1], x[2]) for x in data.get("wordCards", [])]
+            [WordCard(x[0], x[1], x[2]) for x in data.get("wordCardsFocused", [])],
+            [WordCard(x[0], x[1], x[2]) for x in data.get("wordCardsMain", [])]
         )
 
     @classmethod
@@ -45,7 +47,8 @@ class Learning:
             "language": self.language,
             "secondLanguage": self.second_language,
             "root": self.root_node.prepare_json_object(),
-            "wordCards": [[x.word, x.definition, x.translation] for x in self.word_cards]
+            "wordCardsFocused": [[x.word, x.definition, x.translation] for x in self.word_cards_focused],
+            "wordCardsMain": [[x.word, x.definition, x.translation] for x in self.word_cards_main]
         }
 
 

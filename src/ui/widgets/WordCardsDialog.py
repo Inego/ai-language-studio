@@ -5,7 +5,7 @@ from state.WordCard import WordCard
 
 
 class WordCardsDialog(QDialog):
-    def __init__(self, parent, word_cards):
+    def __init__(self, parent, word_cards_main):
         super().__init__(parent)
         self.setWindowTitle("Word Cards")
         self.setModal(True)
@@ -47,16 +47,16 @@ class WordCardsDialog(QDialog):
 
         self.setLayout(layout)
 
-        self.populate_table(word_cards)
+        self.populate_table(word_cards_main)
 
         self.center_on_parent()
 
-        self.word_cards = word_cards
+        self.word_cards_main = word_cards_main
         self.words_added = False
 
-    def populate_table(self, word_cards):
-        self.table_widget.setRowCount(len(word_cards))
-        for row, card in enumerate(word_cards):
+    def populate_table(self, word_cards_main):
+        self.table_widget.setRowCount(len(word_cards_main))
+        for row, card in enumerate(word_cards_main):
             self.table_widget.setItem(row, 0, QTableWidgetItem(card.word))
             self.table_widget.setItem(row, 1, QTableWidgetItem(card.translation))
             self.table_widget.setItem(row, 2, QTableWidgetItem(card.definition))
@@ -84,12 +84,12 @@ class WordCardsDialog(QDialog):
             self.words_added = True
 
     def collect_data(self):
-        self.word_cards = []
+        self.word_cards_main = []
         for row in range(self.table_widget.rowCount()):
             word = self.table_widget.item(row, 0).text()
             translation = self.table_widget.item(row, 1).text()
             definition = self.table_widget.item(row, 2).text() if self.table_widget.item(row, 2) else ""
-            self.word_cards.append(WordCard(word, translation, definition))
+            self.word_cards_main.append(WordCard(word, translation, definition))
 
     def accept(self):
         self.collect_data()
@@ -106,5 +106,5 @@ class WordCardsDialog(QDialog):
         else:
             self.reject()
 
-    def get_word_cards(self):
-        return self.word_cards
+    def get_word_cards_main(self):
+        return self.word_cards_main

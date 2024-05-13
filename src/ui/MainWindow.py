@@ -1,5 +1,7 @@
+import logging
 import os
 import sys
+import traceback
 
 from PyQt5.QtWidgets import QApplication, QWidget, QVBoxLayout, QPushButton, QDialog, QHBoxLayout, QMainWindow, QMenuBar, QAction
 from dotenv import load_dotenv
@@ -16,6 +18,18 @@ from ui.widgets.NodeWidget import UiContext
 from ui.widgets.WordCardsDialog import WordCardsDialog
 from ui.widgets.modal.GenerateDialogModal import GenerateDialogModal
 from ui.widgets.widget_utils import clear_layout
+
+
+logging.basicConfig(level=logging.ERROR,
+                    format='%(asctime)s - %(name)s - %(levelname)s - %(message)s')
+
+
+def log_uncaught_exceptions(ex_cls, ex, tb):
+    text = ''.join(traceback.format_exception(ex_cls, ex, tb))
+    logging.critical(f'Uncaught exception:\n{text}')
+
+
+sys.excepthook = log_uncaught_exceptions
 
 
 class MainWindow(QMainWindow):
@@ -93,9 +107,9 @@ class MainWindow(QMainWindow):
             self.save_and_rebuild()
 
     def open_word_cards(self):
-        dialog = WordCardsDialog(self, self.learning.word_cards)
+        dialog = WordCardsDialog(self, self.learning.word_cards_main)
         if dialog.exec_() == QDialog.Accepted:
-            self.learning.word_cards = dialog.get_word_cards()
+            self.learning.word_cards_main = dialog.get_word_cards_main()
             self.trigger_save()
 
     def save_learning(self):
@@ -133,10 +147,15 @@ class MainWindow(QMainWindow):
 
 def do_main(file_path):
     load_dotenv()
-    q_app = QApplication(sys.argv)
-    main_window = MainWindow(file_path)
-    main_window.show()
-    sys.exit(q_app.exec_())
+    try:
+        q_app = QApplication(sys.argv)
+        main_window = MainWindow(file_path)
+        main_window.show()
+        sys.exit(q_app.exec_())
+    except SystemExit as e:
+        raise e
+    except:
+        logging.exception("Exception in main()")
 
 
 if __name__ == '__main__':
