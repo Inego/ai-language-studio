@@ -1,22 +1,27 @@
 import json
+from typing import List
+
 
 from state.Dialog import Dialog
 from state.Node import Node
 from state.RootNode import RootNode
+from state.WordCard import WordCard
 
 
 class Learning:
-    def __init__(self, language: str, second_language: str, root_node: Node):
+    def __init__(self, language: str, second_language: str, root_node: Node, word_cards: List[WordCard]):
         self.language = language
         self.second_language = second_language
         self.root_node = root_node
+        self.word_cards = word_cards
 
     @classmethod
     def from_data(cls, data):
         return cls(
             data["language"],
             data.get("secondLanguage", "en"),
-            parse_node(data["root"])
+            parse_node(data["root"]),
+            [WordCard(x[0], x[1], x[2]) for x in data.get("wordCards", [])]
         )
 
     @classmethod
@@ -39,7 +44,8 @@ class Learning:
         return {
             "language": self.language,
             "secondLanguage": self.second_language,
-            "root": self.root_node.prepare_json_object()
+            "root": self.root_node.prepare_json_object(),
+            "wordCards": [[x.word, x.definition, x.translation] for x in self.word_cards]
         }
 
 

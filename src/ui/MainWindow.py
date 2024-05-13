@@ -1,7 +1,7 @@
 import os
 import sys
 
-from PyQt5.QtWidgets import QApplication, QWidget, QVBoxLayout, QPushButton, QDialog, QHBoxLayout
+from PyQt5.QtWidgets import QApplication, QWidget, QVBoxLayout, QPushButton, QDialog, QHBoxLayout, QMainWindow, QMenuBar, QAction
 from dotenv import load_dotenv
 from openai import OpenAI
 
@@ -13,11 +13,12 @@ from state.Dialog import Dialog
 from state.Learning import Learning
 from ui.widgets.LanguageDialogBlock import LanguageDialogWidget
 from ui.widgets.NodeWidget import UiContext
+from ui.widgets.WordCardsDialog import WordCardsDialog
 from ui.widgets.modal.GenerateDialogModal import GenerateDialogModal
 from ui.widgets.widget_utils import clear_layout
 
 
-class MainWindow(QWidget):
+class MainWindow(QMainWindow):
     def __init__(self, file_path):
         super().__init__()
         self.file_path = file_path
@@ -39,7 +40,20 @@ class MainWindow(QWidget):
 
         self.setWindowTitle("AI Language Studio")
 
-        main_layout = QVBoxLayout(self)
+        # Create main menu
+        main_menu = self.menuBar()
+        file_menu = main_menu.addMenu('File')
+
+        # Add actions to the file menu
+        exit_action = QAction('Exit', self)
+        exit_action.triggered.connect(self.close)
+        file_menu.addAction(exit_action)
+
+        word_cards_action = QAction('Word Cards', self)
+        word_cards_action.triggered.connect(self.open_word_cards)
+        file_menu.addAction(word_cards_action)
+
+        main_layout = QVBoxLayout()
 
         button_layout = QHBoxLayout()
 
@@ -57,6 +71,10 @@ class MainWindow(QWidget):
         self.dynamic_layout = QVBoxLayout()
         main_layout.addLayout(self.dynamic_layout)
 
+        central_widget = QWidget()
+        central_widget.setLayout(main_layout)
+        self.setCentralWidget(central_widget)
+
         self.build_from_node_path()
 
     def open_generate_dialog_modal_listen(self):
@@ -73,6 +91,12 @@ class MainWindow(QWidget):
             dialog = dialog.result
             self.learning.add_root_node(dialog)
             self.save_and_rebuild()
+
+    def open_word_cards(self):
+        dialog = WordCardsDialog(self, self.learning.word_cards)
+        if dialog.exec_() == QDialog.Accepted:
+            self.learning.word_cards = dialog.get_word_cards()
+            self.trigger_save()
 
     def save_learning(self):
         print("Saving learning...")
