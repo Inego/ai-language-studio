@@ -22,8 +22,8 @@ class Learning:
             data["language"],
             data.get("secondLanguage", "en"),
             parse_node(data["root"]),
-            [WordCard(x[0], x[1], x[2]) for x in data.get("wordCardsFocused", [])],
-            [WordCard(x[0], x[1], x[2]) for x in data.get("wordCardsMain", [])]
+            [WordCard.from_list(x) for x in data.get("wordCardsFocused", [])],
+            [WordCard.from_list(x) for x in data.get("wordCardsMain", [])]
         )
 
     @classmethod
@@ -47,8 +47,8 @@ class Learning:
             "language": self.language,
             "secondLanguage": self.second_language,
             "root": self.root_node.prepare_json_object(),
-            "wordCardsFocused": [[x.word, x.definition, x.translation] for x in self.word_cards_focused],
-            "wordCardsMain": [[x.word, x.definition, x.translation] for x in self.word_cards_main]
+            "wordCardsFocused": [x.to_list() for x in self.word_cards_focused],
+            "wordCardsMain": [x.to_list() for x in self.word_cards_main]
         }
 
 

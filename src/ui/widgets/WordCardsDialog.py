@@ -31,8 +31,8 @@ class WordCardsDialog(QDialog):
 
         # Table widget
         self.table_widget = QTableWidget()
-        self.table_widget.setColumnCount(3)
-        self.table_widget.setHorizontalHeaderLabels(["Word", "Translation", "Definition"])
+        self.table_widget.setColumnCount(5)
+        self.table_widget.setHorizontalHeaderLabels(["Id", "Word", "Comment", "Translation", "Comment"])
         layout.addWidget(self.table_widget)
 
         # OK and Cancel buttons
