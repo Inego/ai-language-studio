@@ -8,6 +8,3 @@ def generate_random_string(length=4):
     random_string = ''.join(random.choice(STRING_DIGITS) for _ in range(length))
     return random_string
 
-
-# Example usage
-print(generate_random_string())

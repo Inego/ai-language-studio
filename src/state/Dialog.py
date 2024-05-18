@@ -1,3 +1,6 @@
+from dataclasses import dataclass
+from enum import Enum
+
 from state.Node import Node
 
 
@@ -51,3 +54,36 @@ class Dialog(Node):
             if interlocutor.name == who:
                 return interlocutor
         return None
+
+
+class DialogType(Enum):
+    LISTEN = "listen"
+    SPEAK = "speak"
+
+
+class DialogCreationAlgorithm(Enum):
+    PARTICIPANTS_AND_SPEC = "participants_and_spec"
+    WORD_CARDS = "word_cards"
+
+
+@dataclass
+class CreateDialogSettings:
+    dialog_type: DialogType = DialogType.LISTEN  # Default value
+    algorithm: DialogCreationAlgorithm = DialogCreationAlgorithm.PARTICIPANTS_AND_SPEC  # Default value
+    use_heavy_model: bool = False  # Default value
+
+    def to_data(self) -> dict:
+        # Custom serialization to handle enums
+        return {
+            "dialog_type": self.dialog_type.value,
+            "algorithm": self.algorithm.value,
+            "use_heavy_model": self.use_heavy_model
+        }
+
+    @staticmethod
+    def from_data(data: dict):
+        return CreateDialogSettings(
+            dialog_type=DialogType(data.get('dialog_type', DialogType.LISTEN.value)),
+            algorithm=DialogCreationAlgorithm(data.get('algorithm', DialogCreationAlgorithm.PARTICIPANTS_AND_SPEC.value)),
+            use_heavy_model=data.get('use_heavy_model', False)
+        )
