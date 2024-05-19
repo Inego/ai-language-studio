@@ -3,7 +3,9 @@ import os
 import sys
 import traceback
 
-from PyQt5.QtWidgets import QApplication, QWidget, QVBoxLayout, QPushButton, QDialog, QHBoxLayout, QMainWindow, QMenuBar, QAction, QRadioButton, QButtonGroup, QMessageBox
+from PyQt5.QtCore import Qt
+from PyQt5.QtWidgets import QApplication, QWidget, QVBoxLayout, QPushButton, QDialog, QHBoxLayout, QMainWindow, \
+    QMenuBar, QAction, QRadioButton, QButtonGroup, QMessageBox, QCheckBox
 from dotenv import load_dotenv
 from openai import OpenAI
 
@@ -11,7 +13,7 @@ from ontology.Locale import Locale
 from ontology.dialogs import Dialogs
 from service.AudioPlayer import AudioPlayer
 from service.SaveService import SaveServiceThread
-from state.Dialog import Dialog
+from state.Dialog import Dialog, DialogType, DialogCreationAlgorithm
 from state.Learning import Learning
 from ui.widgets.LanguageDialogBlock import LanguageDialogWidget
 from ui.widgets.NodeWidget import UiContext
@@ -86,31 +88,83 @@ class MainWindow(QMainWindow):
         settings = self.learning.create_dialog_settings
         # Create horizontal layout for dialog controls
         dialog_controls_layout = QHBoxLayout()
+
         # Create vertical layout for dialog type radio buttons
         dialog_type_layout = QVBoxLayout()
-        radio_dialog_type_listen = QRadioButton("Listen")
-        radio_dialog_type_speak = QRadioButton("Speak")
+        self.radio_dialog_type_listen = QRadioButton("Listen")
+        self.radio_dialog_type_speak = QRadioButton("Speak")
         dialog_type_group = QButtonGroup(self)
-        dialog_type_group.addButton(radio_dialog_type_listen)
-        dialog_type_group.addButton(radio_dialog_type_speak)
-        dialog_type_layout.addWidget(radio_dialog_type_listen)
-        dialog_type_layout.addWidget(radio_dialog_type_speak)
+        dialog_type_group.addButton(self.radio_dialog_type_listen)
+        dialog_type_group.addButton(self.radio_dialog_type_speak)
+        dialog_type_layout.addWidget(self.radio_dialog_type_listen)
+        dialog_type_layout.addWidget(self.radio_dialog_type_speak)
+
+        # Initialize dialog type radio buttons based on settings
+        if settings.dialog_type == DialogType.LISTEN:
+            self.radio_dialog_type_listen.setChecked(True)
+        else:
+            self.radio_dialog_type_speak.setChecked(True)
+
+        # Connect radio buttons to update settings
+        self.radio_dialog_type_listen.toggled.connect(lambda: self.update_dialog_type(DialogType.LISTEN))
+        self.radio_dialog_type_speak.toggled.connect(lambda: self.update_dialog_type(DialogType.SPEAK))
+
         # Create vertical layout for algo radio buttons
         algo_layout = QVBoxLayout()
-        radio_algo_participant = QRadioButton("By participants and spec")
-        radio_algo_word_cards = QRadioButton("With word cards")
+        self.radio_algo_participant = QRadioButton("By participants and spec")
+        self.radio_algo_word_cards = QRadioButton("With word cards")
         algo_group = QButtonGroup(self)
-        algo_group.addButton(radio_algo_participant)
-        algo_group.addButton(radio_algo_word_cards)
-        algo_layout.addWidget(radio_algo_participant)
-        algo_layout.addWidget(radio_algo_word_cards)
-        # Add both vertical layouts to the horizontal layout
+        algo_group.addButton(self.radio_algo_participant)
+        algo_group.addButton(self.radio_algo_word_cards)
+        algo_layout.addWidget(self.radio_algo_participant)
+        algo_layout.addWidget(self.radio_algo_word_cards)
+
+        # Initialize algorithm radio buttons based on settings
+        if settings.algorithm == DialogCreationAlgorithm.PARTICIPANTS_AND_SPEC:
+            self.radio_algo_participant.setChecked(True)
+        else:
+            self.radio_algo_word_cards.setChecked(True)
+
+        # Connect radio buttons to update settings
+        self.radio_algo_participant.toggled.connect(
+            lambda: self.update_algorithm(DialogCreationAlgorithm.PARTICIPANTS_AND_SPEC))
+        self.radio_algo_word_cards.toggled.connect(lambda: self.update_algorithm(DialogCreationAlgorithm.WORD_CARDS))
+
+        # Create checkbox for "Use heavy model"
+        self.use_heavy_model_checkbox = QCheckBox("Use heavy model")
+        self.use_heavy_model_checkbox.setChecked(settings.use_heavy_model)
+
+        # Connect checkbox to update settings
+        self.use_heavy_model_checkbox.stateChanged.connect(self.update_use_heavy_model)
+
+        # Add both vertical layouts and checkbox to the horizontal layout
         dialog_controls_layout.addLayout(dialog_type_layout)
         dialog_controls_layout.addLayout(algo_layout)
+        dialog_controls_layout.addWidget(self.use_heavy_model_checkbox)
+
         create_dialog_button = QPushButton("Create Dialog")
         create_dialog_button.clicked.connect(self.create_dialog)
         dialog_controls_layout.addWidget(create_dialog_button)
+
         return dialog_controls_layout
+
+    def update_dialog_type(self, dialog_type):
+        if self.radio_dialog_type_listen.isChecked() and dialog_type == DialogType.LISTEN:
+            self.learning.create_dialog_settings.dialog_type = DialogType.LISTEN
+        elif self.radio_dialog_type_speak.isChecked() and dialog_type == DialogType.SPEAK:
+            self.learning.create_dialog_settings.dialog_type = DialogType.SPEAK
+        self.trigger_save()
+
+    def update_algorithm(self, algorithm):
+        if self.radio_algo_participant.isChecked() and algorithm == DialogCreationAlgorithm.PARTICIPANTS_AND_SPEC:
+            self.learning.create_dialog_settings.algorithm = DialogCreationAlgorithm.PARTICIPANTS_AND_SPEC
+        elif self.radio_algo_word_cards.isChecked() and algorithm == DialogCreationAlgorithm.WORD_CARDS:
+            self.learning.create_dialog_settings.algorithm = DialogCreationAlgorithm.WORD_CARDS
+        self.trigger_save()
+
+    def update_use_heavy_model(self, state):
+        self.learning.create_dialog_settings.use_heavy_model = (state == Qt.Checked)
+        self.trigger_save()
 
     def create_dialog(self):
         if self.radio_algo_word_cards.isChecked():
