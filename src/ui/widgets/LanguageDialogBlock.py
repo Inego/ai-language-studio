@@ -2,7 +2,7 @@ from PyQt5.QtCore import Qt
 from PyQt5.QtWidgets import QLabel, QPushButton, QHBoxLayout, QTextEdit, QSizePolicy
 
 from languages.serbian import latin_to_cyrillic
-from state.Dialog import Dialog
+from state.Dialog import Dialog, DialogType
 from ui.widgets.NodeWidget import NodeWidget, UiContext
 from ui.widgets.widget_utils import large_qedit_font
 
@@ -85,7 +85,7 @@ class LanguageDialogWidget(NodeWidget):
 
             self.update_navigation_enabled()
 
-            if self.dialog.dialog_type == "listen":
+            if self.dialog.dialog_type == DialogType.LISTEN:
                 self.play_dialog()
 
         sentence = self.get_current_sentence()
@@ -94,17 +94,17 @@ class LanguageDialogWidget(NodeWidget):
         self.text_edit_translation.setHtml(self.determine_second_text(sentence))
 
     def determine_main_text(self, sentence):
-        if self.dialog.dialog_type == "listen":
+        if self.dialog.dialog_type == DialogType.LISTEN:
             return "..." if self.show_level == 0 else sentence.sentence
-        elif self.dialog.dialog_type == "speak":
+        elif self.dialog.dialog_type == DialogType.SPEAK:
             return sentence.translation
 
         raise ValueError(f"Can't determine main text for {self.dialog.dialog_type}")
 
     def determine_second_text(self, sentence):
-        if self.dialog.dialog_type == "listen":
+        if self.dialog.dialog_type == DialogType.LISTEN:
             return "..." if self.show_level < 2 else sentence.translation
-        elif self.dialog.dialog_type == "speak":
+        elif self.dialog.dialog_type == DialogType.SPEAK:
             return "..." if self.show_level < 1 else sentence.sentence
         raise ValueError(f"Can't determine second text for {self.dialog.dialog_type}")
 
@@ -135,9 +135,9 @@ class LanguageDialogWidget(NodeWidget):
         self.ui_context.audio_player.play(interlocutor.voice, text_to_play)
 
     def get_max_show_level(self):
-        if self.dialog.dialog_type == "listen":
+        if self.dialog.dialog_type == DialogType.LISTEN:
             return 2
-        elif self.dialog.dialog_type == "speak":
+        elif self.dialog.dialog_type == DialogType.SPEAK:
             return 1
         raise ValueError(f"Can't get max show level for {self.dialog.dialog_type}")
 

@@ -3,9 +3,8 @@ import os
 import sys
 import traceback
 
-from PyQt5.QtCore import Qt
-from PyQt5.QtWidgets import QApplication, QWidget, QVBoxLayout, QPushButton, QDialog, QHBoxLayout, QMainWindow, \
-    QMenuBar, QAction, QRadioButton, QButtonGroup, QMessageBox, QCheckBox
+from PyQt5.QtWidgets import QApplication, QWidget, QVBoxLayout, QPushButton, QDialog, QMainWindow, \
+    QAction
 from dotenv import load_dotenv
 from openai import OpenAI
 
@@ -13,14 +12,13 @@ from ontology.Locale import Locale
 from ontology.dialogs import Dialogs
 from service.AudioPlayer import AudioPlayer
 from service.SaveService import SaveServiceThread
-from state.Dialog import Dialog, DialogType, DialogCreationAlgorithm
+from state.Dialog import Dialog
 from state.Learning import Learning
 from ui.widgets.LanguageDialogBlock import LanguageDialogWidget
 from ui.widgets.NodeWidget import UiContext
 from ui.widgets.WordCardsDialog import WordCardsDialog
 from ui.widgets.modal.GenerateDialogModal import GenerateDialogModal
 from ui.widgets.widget_utils import clear_layout
-
 
 logging.basicConfig(level=logging.ERROR,
                     format='%(asctime)s - %(name)s - %(levelname)s - %(message)s')
@@ -71,9 +69,9 @@ class MainWindow(QMainWindow):
 
         main_layout = QVBoxLayout()
 
-        dialog_controls_layout = self.create_create_dialog_controls()
-
-        main_layout.addLayout(dialog_controls_layout)
+        create_dialog_button = QPushButton("Create Dialog")
+        create_dialog_button.clicked.connect(self.create_dialog)
+        main_layout.addWidget(create_dialog_button)
 
         self.dynamic_layout = QVBoxLayout()
         main_layout.addLayout(self.dynamic_layout)
@@ -84,105 +82,14 @@ class MainWindow(QMainWindow):
 
         self.build_from_node_path()
 
-    def create_create_dialog_controls(self):
-        settings = self.learning.create_dialog_settings
-        # Create horizontal layout for dialog controls
-        dialog_controls_layout = QHBoxLayout()
 
-        # Create vertical layout for dialog type radio buttons
-        dialog_type_layout = QVBoxLayout()
-        self.radio_dialog_type_listen = QRadioButton("Listen")
-        self.radio_dialog_type_speak = QRadioButton("Speak")
-        dialog_type_group = QButtonGroup(self)
-        dialog_type_group.addButton(self.radio_dialog_type_listen)
-        dialog_type_group.addButton(self.radio_dialog_type_speak)
-        dialog_type_layout.addWidget(self.radio_dialog_type_listen)
-        dialog_type_layout.addWidget(self.radio_dialog_type_speak)
 
-        # Initialize dialog type radio buttons based on settings
-        if settings.dialog_type == DialogType.LISTEN:
-            self.radio_dialog_type_listen.setChecked(True)
-        else:
-            self.radio_dialog_type_speak.setChecked(True)
-
-        # Connect radio buttons to update settings
-        self.radio_dialog_type_listen.toggled.connect(lambda: self.update_dialog_type(DialogType.LISTEN))
-        self.radio_dialog_type_speak.toggled.connect(lambda: self.update_dialog_type(DialogType.SPEAK))
-
-        # Create vertical layout for algo radio buttons
-        algo_layout = QVBoxLayout()
-        self.radio_algo_participant = QRadioButton("By participants and spec")
-        self.radio_algo_word_cards = QRadioButton("With word cards")
-        algo_group = QButtonGroup(self)
-        algo_group.addButton(self.radio_algo_participant)
-        algo_group.addButton(self.radio_algo_word_cards)
-        algo_layout.addWidget(self.radio_algo_participant)
-        algo_layout.addWidget(self.radio_algo_word_cards)
-
-        # Initialize algorithm radio buttons based on settings
-        if settings.algorithm == DialogCreationAlgorithm.PARTICIPANTS_AND_SPEC:
-            self.radio_algo_participant.setChecked(True)
-        else:
-            self.radio_algo_word_cards.setChecked(True)
-
-        # Connect radio buttons to update settings
-        self.radio_algo_participant.toggled.connect(
-            lambda: self.update_algorithm(DialogCreationAlgorithm.PARTICIPANTS_AND_SPEC))
-        self.radio_algo_word_cards.toggled.connect(lambda: self.update_algorithm(DialogCreationAlgorithm.WORD_CARDS))
-
-        # Create checkbox for "Use heavy model"
-        self.use_heavy_model_checkbox = QCheckBox("Use heavy model")
-        self.use_heavy_model_checkbox.setChecked(settings.use_heavy_model)
-
-        # Connect checkbox to update settings
-        self.use_heavy_model_checkbox.stateChanged.connect(self.update_use_heavy_model)
-
-        # Add both vertical layouts and checkbox to the horizontal layout
-        dialog_controls_layout.addLayout(dialog_type_layout)
-        dialog_controls_layout.addLayout(algo_layout)
-        dialog_controls_layout.addWidget(self.use_heavy_model_checkbox)
-
-        create_dialog_button = QPushButton("Create Dialog")
-        create_dialog_button.clicked.connect(self.create_dialog)
-        dialog_controls_layout.addWidget(create_dialog_button)
-
-        return dialog_controls_layout
-
-    def update_dialog_type(self, dialog_type):
-        if self.radio_dialog_type_listen.isChecked() and dialog_type == DialogType.LISTEN:
-            self.learning.create_dialog_settings.dialog_type = DialogType.LISTEN
-        elif self.radio_dialog_type_speak.isChecked() and dialog_type == DialogType.SPEAK:
-            self.learning.create_dialog_settings.dialog_type = DialogType.SPEAK
-        self.trigger_save()
-
-    def update_algorithm(self, algorithm):
-        if self.radio_algo_participant.isChecked() and algorithm == DialogCreationAlgorithm.PARTICIPANTS_AND_SPEC:
-            self.learning.create_dialog_settings.algorithm = DialogCreationAlgorithm.PARTICIPANTS_AND_SPEC
-        elif self.radio_algo_word_cards.isChecked() and algorithm == DialogCreationAlgorithm.WORD_CARDS:
-            self.learning.create_dialog_settings.algorithm = DialogCreationAlgorithm.WORD_CARDS
-        self.trigger_save()
-
-    def update_use_heavy_model(self, state):
-        self.learning.create_dialog_settings.use_heavy_model = (state == Qt.Checked)
-        self.trigger_save()
 
     def create_dialog(self):
-        if self.radio_algo_word_cards.isChecked():
-            QMessageBox.information(self, "Not Implemented", "The 'With word cards' algorithm is not implemented yet.")
-            return
+        self.open_generate_dialog_modal()
 
-        if self.radio_dialog_type_listen.isChecked():
-            dialog_type = "listen"
-        elif self.radio_dialog_type_speak.isChecked():
-            dialog_type = "speak"
-        else:
-            QMessageBox.warning(self, "Selection Error", "Please select a dialog type.")
-            return
-
-        self.open_generate_dialog_modal(dialog_type)
-
-    def open_generate_dialog_modal(self, dialog_type):
-        dialog = GenerateDialogModal(self.openai_client, self.dialogs, self.locale, self.second_locale, dialog_type,
+    def open_generate_dialog_modal(self):
+        dialog = GenerateDialogModal(self.openai_client, self.dialogs, self.locale, self.second_locale, self.learning.create_dialog_settings,
                                      parent=self)
         result = dialog.exec_()
         if result == QDialog.Accepted:
