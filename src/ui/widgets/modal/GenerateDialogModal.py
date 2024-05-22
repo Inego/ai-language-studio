@@ -1,5 +1,5 @@
 import json
-from typing import Optional
+from typing import Optional, List
 
 from PyQt5.QtCore import QThread, pyqtSignal, Qt
 from PyQt5.QtWidgets import QDialog, QStackedWidget, QVBoxLayout, QPushButton, QHBoxLayout, QLabel, QWidget, QCheckBox, \
@@ -7,18 +7,21 @@ from PyQt5.QtWidgets import QDialog, QStackedWidget, QVBoxLayout, QPushButton, Q
 from openai import OpenAI
 
 from ontology.Locale import Locale
-from ontology.dialogs import Dialogs, DialogPreliminary
+from ontology.dialogs import Dialogs, DialogPreliminary, extract_context_and_dialog
 from state.Dialog import Dialog, CreateDialogSettings, DialogCreationAlgorithm, DialogType
+from state.WordCard import WordCard
+from utils.my_random import select_and_remove
 from utils.openai_utils import stream_chat_completion, MODEL_BASIC, MODEL_HEAVY
 
 
 class GenerateDialogModal(QDialog):
     def __init__(self, openai_client: OpenAI, dialogs: Dialogs, locale: Locale, second_locale: Locale,
-                 settings: CreateDialogSettings, parent=None):
+                 settings: CreateDialogSettings, word_cards_combined: List[WordCard], parent=None):
         super(GenerateDialogModal, self).__init__(parent)
         self.locale = locale
         self.second_locale = second_locale
         self.settings = settings
+        self.word_cards_combined = word_cards_combined
         self.dialogs = dialogs
         self.openai_client = openai_client
         self.result: Optional[Dialog] = None
@@ -64,20 +67,12 @@ class GenerateDialogModal(QDialog):
         self.generate_button.clicked.connect(self.generate)
         first_panel_layout.addWidget(self.generate_button)
 
-
         return first_panel
 
     def create_participants_and_spec_panel(self):
         self.participants_and_spec_panel = QWidget()
         participants_and_spec_panel_layout = QVBoxLayout(self.participants_and_spec_panel)
-        plot_layout = QHBoxLayout()
-        regen_button = QPushButton("\U0001F501", self)
-        regen_button.clicked.connect(self.regen_plot)
-        plot_layout.addWidget(regen_button)
-        self.plot_label = QLabel("Plot", self)
-        plot_layout.addWidget(self.plot_label)
-        self.refresh_plot_label()
-        participants_and_spec_panel_layout.addLayout(plot_layout)
+
         self.plot_details_edit = QTextEdit()
         participants_and_spec_panel_layout.addWidget(self.plot_details_edit)
 
@@ -87,8 +82,8 @@ class GenerateDialogModal(QDialog):
     def create_word_cards_panel(self):
         self.word_cards_panel = QWidget()
         word_cards_panel_layout = QVBoxLayout(self.word_cards_panel)
-        todo_label = QLabel("TODO", self.word_cards_panel)
-        word_cards_panel_layout.addWidget(todo_label)
+        word_cards_label = QLabel("Word Cards", self.word_cards_panel)
+        word_cards_panel_layout.addWidget(word_cards_label)
 
         self.first_panel_stacked_widget.addWidget(self.word_cards_panel)
 
@@ -97,7 +92,10 @@ class GenerateDialogModal(QDialog):
 
     def create_create_dialog_controls(self):
         settings = self.settings
-        dialog_controls_layout = QHBoxLayout()
+
+        dialog_controls_rows = QVBoxLayout()
+
+        dialog_controls_first_row = QHBoxLayout()
 
         dialog_type_layout = QVBoxLayout()
         self.radio_dialog_type_listen = QRadioButton("Listen")
@@ -138,11 +136,23 @@ class GenerateDialogModal(QDialog):
         self.use_heavy_model_checkbox.setChecked(settings.use_heavy_model)
         self.use_heavy_model_checkbox.stateChanged.connect(self.update_use_heavy_model)
 
-        dialog_controls_layout.addLayout(dialog_type_layout)
-        dialog_controls_layout.addLayout(algo_layout)
-        dialog_controls_layout.addWidget(self.use_heavy_model_checkbox)
+        dialog_controls_first_row.addLayout(dialog_type_layout)
+        dialog_controls_first_row.addLayout(algo_layout)
+        dialog_controls_first_row.addWidget(self.use_heavy_model_checkbox)
 
-        return dialog_controls_layout
+        dialog_controls_rows.addLayout(dialog_controls_first_row)
+
+        plot_row = QHBoxLayout()
+        regen_button = QPushButton("\U0001F501", self)
+        regen_button.clicked.connect(self.regen_plot)
+        plot_row.addWidget(regen_button)
+        self.plot_label = QLabel("Plot", self)
+        plot_row.addWidget(self.plot_label)
+        self.refresh_plot_label()
+
+        dialog_controls_rows.addLayout(plot_row)
+
+        return dialog_controls_rows
 
     def update_dialog_type(self, dialog_type):
         self.settings.dialog_type = dialog_type
@@ -153,6 +163,7 @@ class GenerateDialogModal(QDialog):
             self.switch_panel(0)
         elif algorithm == DialogCreationAlgorithm.WORD_CARDS:
             self.switch_panel(1)
+        self.regen_plot()
 
     def update_use_heavy_model(self, state):
         self.settings.use_heavy_model = (state == Qt.Checked)
@@ -162,7 +173,7 @@ class GenerateDialogModal(QDialog):
         self.refresh_plot_label()
 
     def generate_initial_prompt(self):
-        return self.dialogs.generate_initial_prompt(self.locale)
+        return self.dialogs.generate_initial_prompt(self.locale, self.settings.algorithm)
 
     def refresh_plot_label(self):
         self.plot_label.setText(self.initial_prompt.prompt)
@@ -193,6 +204,7 @@ class GenerateDialogModal(QDialog):
             self.settings,
             self.initial_prompt,
             self.plot_details_edit.toPlainText(),
+            self.word_cards_combined,
             self
         )
         thread.new_stage_signal.connect(self.add_stage_name)
@@ -214,6 +226,7 @@ class GenerateDialogThread(QThread):
                  settings: CreateDialogSettings,
                  initial_prompt: DialogPreliminary,
                  prompt_details: str,
+                 word_cards_combined: List[WordCard],
                  parent=None):
         super(GenerateDialogThread, self).__init__(parent)
         self.openai_client = openai_client
@@ -223,6 +236,7 @@ class GenerateDialogThread(QThread):
         self.settings = settings
         self.initial_prompt = initial_prompt
         self.prompt_details = prompt_details
+        self.word_cards_combined = word_cards_combined
 
     def run(self):
         language_name = self.locale.locale_name
@@ -230,12 +244,22 @@ class GenerateDialogThread(QThread):
         self.new_stage_signal.emit(f"Generating dialog in {language_name}")
 
         prompt = self.initial_prompt.prompt
-        if self.prompt_details:
-            prompt += " " + self.prompt_details
+
+        selected_word_card_ids = []
+        if self.settings.algorithm == DialogCreationAlgorithm.PARTICIPANTS_AND_SPEC:
+            if self.prompt_details:
+                prompt += " " + self.prompt_details
+
+        elif self.settings.algorithm == DialogCreationAlgorithm.WORD_CARDS:
+            # Retrieve 3 weighted
+            selected_words: List[WordCard] = select_and_remove(self.word_cards_combined, 3)
+            if selected_words:
+                prompt += (" The dialog should feature the following words: " +
+                           ", ".join(f'"{w.word}"' for w in selected_words) + ".")
+            selected_word_card_ids = [w.identifier for w in selected_words]
+
         prompt += " " + self.initial_prompt.prompt_end
-
         print(prompt)
-
         dialog_orig = stream_chat_completion(
             self.openai_client,
             MODEL_HEAVY if self.locale.heavy_generation or self.settings.use_heavy_model else MODEL_BASIC,
@@ -243,32 +267,34 @@ class GenerateDialogThread(QThread):
             1,
             lambda x: self.update_count_signal.emit(x)
         )
-
         print(dialog_orig)
 
-        self.new_stage_signal.emit("Translating and packing to JSON")
+        context_text, dialog_text = extract_context_and_dialog(dialog_orig)
 
+        self.new_stage_signal.emit("Translating and packing to JSON")
         aligned = stream_chat_completion(
             self.openai_client,
             MODEL_BASIC,
             [{
                 "role": "user",
-                "content": f"Given the following dialog in {language_name}:"
-                           f'\n```\n{dialog_orig}\n```\n'
+                "content": f"{context_text}\n"
+                           f"Given their dialog in {language_name}:"
+                           f'\n```\n{dialog_text}\n```\n'
                            f'output a JSON list of each utterance from this dialog with its {second_language_name} translation in the following format: '
                            f'`[[<who>, <{language_name} utterance>, <{second_language_name} translation>], ...]`. Do not use Markdown!'
             }],
             0,
             lambda x: self.update_count_signal.emit(x)
         )
-
         print(aligned)
-
         content = json.loads(aligned)
         result = Dialog.from_data({
             "dialogType": self.settings.dialog_type,
             "interlocutors": self.initial_prompt.interlocutors,
             "currentPosition": 0,
-            "content": content
+            "content": content,
+            "context": context_text,
+            "selectedWordCardIds": selected_word_card_ids
         })
+
         self.finished_signal.emit(result)

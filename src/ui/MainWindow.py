@@ -14,6 +14,7 @@ from service.AudioPlayer import AudioPlayer
 from service.SaveService import SaveServiceThread
 from state.Dialog import Dialog
 from state.Learning import Learning
+from state.WordCard import move_id_to_end
 from ui.widgets.LanguageDialogBlock import LanguageDialogWidget
 from ui.widgets.NodeWidget import UiContext
 from ui.widgets.WordCardsDialog import WordCardsDialog
@@ -82,19 +83,23 @@ class MainWindow(QMainWindow):
 
         self.build_from_node_path()
 
-
-
-
     def create_dialog(self):
         self.open_generate_dialog_modal()
 
     def open_generate_dialog_modal(self):
-        dialog = GenerateDialogModal(self.openai_client, self.dialogs, self.locale, self.second_locale, self.learning.create_dialog_settings,
-                                     parent=self)
+        dialog = GenerateDialogModal(
+            self.openai_client, self.dialogs, self.locale, self.second_locale, self.learning.create_dialog_settings,
+            self.learning.word_cards_focused + self.learning.word_cards_main,
+            parent=self)
         result = dialog.exec_()
         if result == QDialog.Accepted:
             dialog = dialog.result
             self.learning.add_root_node(dialog)
+
+            for identifier in dialog.selected_word_card_ids:
+                move_id_to_end(self.learning.word_cards_focused, identifier)
+                move_id_to_end(self.learning.word_cards_main, identifier)
+
             self.save_and_rebuild()
 
     def open_word_cards(self):

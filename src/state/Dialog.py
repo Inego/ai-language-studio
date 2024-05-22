@@ -1,5 +1,6 @@
 from dataclasses import dataclass
 from enum import Enum
+from typing import List
 
 from state.Node import Node
 
@@ -31,21 +32,32 @@ class Dialog(Node):
             "dialogType": self.dialog_type.value,
             "interlocutors": [[i.type, i.name, i.gender, i.voice] for i in self.interlocutors],
             "currentPosition": self.current_position,
-            "content": [[s.who, s.sentence, s.translation] for s in self.content]
+            "content": [[s.who, s.sentence, s.translation] for s in self.content],
+            "context": self.context,
+            "selectedWordCardIds": self.selected_word_card_ids
         }
 
-    def __init__(self, dialog_type: DialogType, interlocutors: list[Interlocutor], current_position, content: list[Sentence]):
+    def __init__(self, dialog_type: DialogType, interlocutors: list[Interlocutor], current_position, content: list[Sentence], context: str, selected_word_card_ids: List[str]):
         super().__init__()
         self.dialog_type = dialog_type
         self.interlocutors = interlocutors
         self.current_position = current_position
         self.content = content
+        self.context = context
+        self.selected_word_card_ids = selected_word_card_ids
 
     @classmethod
     def from_data(cls, data):
         interlocutors = [Interlocutor(*interlocutor) for interlocutor in data['interlocutors']]
         content = [Sentence(*sentence) for sentence in data['content']]
-        return cls(DialogType(data.get('dialogType', DialogType.LISTEN.value)), interlocutors, data['currentPosition'], content)
+        return cls(
+            DialogType(data.get('dialogType', DialogType.LISTEN.value)),
+            interlocutors,
+            data['currentPosition'],
+            content,
+            data.get("context"),
+            data.get("selectedWordCardIds", [])
+        )
 
     def navigate(self, delta):
         new_current_position = self.current_position + delta

@@ -1,4 +1,4 @@
-from typing import List
+from typing import List, Callable
 
 
 class WordCard:
@@ -18,8 +18,24 @@ class WordCard:
     def to_list(self):
         return [self.identifier, self.word, self.word_comment, self.translation, self.translation_comment]
 
+    def __repr__(self):
+        return (f"WordCard(identifier={self.identifier!r}, word={self.word!r}, "
+                f"word_comment={self.word_comment!r}, translation={self.translation!r}, "
+                f"translation_comment={self.translation_comment!r})")
 
-class WordCardCollection:
-    def __init__(self, focused: List[WordCard], main: List[WordCard]):
-        self.focused = focused
-        self.main = main
+
+def move_card(cards: List[WordCard], identifier: str, position_func: Callable[[List[WordCard], WordCard], None]):
+    index = next((i for i, card in enumerate(cards) if card.identifier == identifier), None)
+    if index is not None:
+        card = cards.pop(index)
+        position_func(cards, card)
+
+
+def move_id_to_end(cards: List[WordCard], identifier: str):
+    move_card(cards, identifier, lambda cs, c: cs.append(c))
+
+
+def move_id_to_start(cards: List[WordCard], identifier: str):
+    move_card(cards, identifier, lambda cs, c: cs.insert(0, c))
+
+
