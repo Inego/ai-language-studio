@@ -1,7 +1,10 @@
+import logging
 import os
 import sys
+import traceback
 
-from PyQt5.QtWidgets import QApplication, QWidget, QVBoxLayout, QPushButton, QDialog, QHBoxLayout
+from PyQt5.QtWidgets import QApplication, QWidget, QVBoxLayout, QPushButton, QDialog, QMainWindow, \
+    QAction
 from dotenv import load_dotenv
 from openai import OpenAI
 
@@ -11,13 +14,26 @@ from service.AudioPlayer import AudioPlayer
 from service.SaveService import SaveServiceThread
 from state.Dialog import Dialog
 from state.Learning import Learning
+from state.WordCard import move_id_to_end
 from ui.widgets.LanguageDialogBlock import LanguageDialogWidget
 from ui.widgets.NodeWidget import UiContext
+from ui.widgets.modal.WordCardsDialog import WordCardsDialog
 from ui.widgets.modal.GenerateDialogModal import GenerateDialogModal
 from ui.widgets.widget_utils import clear_layout
 
+logging.basicConfig(level=logging.ERROR,
+                    format='%(asctime)s - %(name)s - %(levelname)s - %(message)s')
 
-class MainWindow(QWidget):
+
+def log_uncaught_exceptions(ex_cls, ex, tb):
+    text = ''.join(traceback.format_exception(ex_cls, ex, tb))
+    logging.critical(f'Uncaught exception:\n{text}')
+
+
+sys.excepthook = log_uncaught_exceptions
+
+
+class MainWindow(QMainWindow):
     def __init__(self, file_path):
         super().__init__()
         self.file_path = file_path
@@ -39,40 +55,60 @@ class MainWindow(QWidget):
 
         self.setWindowTitle("AI Language Studio")
 
-        main_layout = QVBoxLayout(self)
+        # Create main menu
+        main_menu = self.menuBar()
+        file_menu = main_menu.addMenu('File')
 
-        button_layout = QHBoxLayout()
+        # Add actions to the file menu
+        exit_action = QAction('Exit', self)
+        exit_action.triggered.connect(self.close)
+        file_menu.addAction(exit_action)
 
-        button_dialog_listen = QPushButton("Dialog (listen)")
-        button_dialog_listen.clicked.connect(self.open_generate_dialog_modal_listen)
-        button_layout.addWidget(button_dialog_listen)
+        word_cards_action = QAction('Word Cards', self)
+        word_cards_action.triggered.connect(self.open_word_cards)
+        file_menu.addAction(word_cards_action)
 
-        button_dialog_speak = QPushButton("Dialog (speak)")
-        button_dialog_speak.clicked.connect(self.open_generate_dialog_modal_speak)
-        button_layout.addWidget(button_dialog_speak)
+        main_layout = QVBoxLayout()
 
-        # Add the horizontal layout with the buttons to the main layout
-        main_layout.addLayout(button_layout)
+        create_dialog_button = QPushButton("Create Dialog")
+        create_dialog_button.clicked.connect(self.create_dialog)
+        main_layout.addWidget(create_dialog_button)
 
         self.dynamic_layout = QVBoxLayout()
         main_layout.addLayout(self.dynamic_layout)
 
+        central_widget = QWidget()
+        central_widget.setLayout(main_layout)
+        self.setCentralWidget(central_widget)
+
         self.build_from_node_path()
 
-    def open_generate_dialog_modal_listen(self):
-        self.open_generate_dialog_modal("listen")
+    def create_dialog(self):
+        self.open_generate_dialog_modal()
 
-    def open_generate_dialog_modal_speak(self):
-        self.open_generate_dialog_modal("speak")
-
-    def open_generate_dialog_modal(self, dialog_type):
-        dialog = GenerateDialogModal(self.openai_client, self.dialogs, self.locale, self.second_locale, dialog_type,
-                                     parent=self)
+    def open_generate_dialog_modal(self):
+        dialog = GenerateDialogModal(
+            self.openai_client, self.dialogs, self.locale, self.second_locale, self.learning.create_dialog_settings,
+            self.learning.word_cards_focused + self.learning.word_cards_main,
+            parent=self)
         result = dialog.exec_()
         if result == QDialog.Accepted:
             dialog = dialog.result
             self.learning.add_root_node(dialog)
+
+            for identifier in dialog.selected_word_card_ids:
+                move_id_to_end(self.learning.word_cards_focused, identifier)
+                move_id_to_end(self.learning.word_cards_main, identifier)
+
             self.save_and_rebuild()
+
+    def open_word_cards(self):
+        dialog = WordCardsDialog(self, self.learning.word_cards_focused, self.learning.word_cards_main)
+        if dialog.exec_() == QDialog.Accepted:
+            word_cards_focused, word_cards_main = dialog.export_word_cards()
+            self.learning.word_cards_focused = word_cards_focused
+            self.learning.word_cards_main = word_cards_main
+            self.trigger_save()
 
     def save_learning(self):
         print("Saving learning...")
@@ -109,10 +145,15 @@ class MainWindow(QWidget):
 
 def do_main(file_path):
     load_dotenv()
-    q_app = QApplication(sys.argv)
-    main_window = MainWindow(file_path)
-    main_window.show()
-    sys.exit(q_app.exec_())
+    try:
+        q_app = QApplication(sys.argv)
+        main_window = MainWindow(file_path)
+        main_window.show()
+        sys.exit(q_app.exec_())
+    except SystemExit as e:
+        raise e
+    except:
+        logging.exception("Exception in main()")
 
 
 if __name__ == '__main__':

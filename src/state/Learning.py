@@ -1,22 +1,32 @@
 import json
+from typing import List
 
-from state.Dialog import Dialog
+
+from state.Dialog import Dialog, CreateDialogSettings
 from state.Node import Node
 from state.RootNode import RootNode
+from state.WordCard import WordCard, pop_card
 
 
 class Learning:
-    def __init__(self, language: str, second_language: str, root_node: Node):
+    def __init__(self, language: str, second_language: str, root_node: Node, word_cards_focused: List[WordCard],
+                 word_cards_main: List[WordCard], create_dialog_settings: CreateDialogSettings):
         self.language = language
         self.second_language = second_language
         self.root_node = root_node
+        self.word_cards_focused = word_cards_focused
+        self.word_cards_main = word_cards_main
+        self.create_dialog_settings = create_dialog_settings
 
     @classmethod
     def from_data(cls, data):
         return cls(
             data["language"],
             data.get("secondLanguage", "en"),
-            parse_node(data["root"])
+            parse_node(data["root"]),
+            [WordCard.from_list(x) for x in data.get("wordCardsFocused", [])],
+            [WordCard.from_list(x) for x in data.get("wordCardsMain", [])],
+            CreateDialogSettings.from_data(data.get("createDialogSettings", {}))
         )
 
     @classmethod
@@ -39,9 +49,32 @@ class Learning:
         return {
             "language": self.language,
             "secondLanguage": self.second_language,
-            "root": self.root_node.prepare_json_object()
+            "root": self.root_node.prepare_json_object(),
+            "wordCardsFocused": [x.to_list() for x in self.word_cards_focused],
+            "wordCardsMain": [x.to_list() for x in self.word_cards_main],
+            "createDialogSettings": self.create_dialog_settings.to_data()
         }
 
+    def is_focused(self, word_id):
+        return word_id in (w.identifier for w in self.word_cards_focused)
+
+    def get_word(self, identifier):
+        for word_card in self.word_cards_focused:
+            if word_card.identifier == identifier:
+                return word_card
+        for word_card in self.word_cards_main:
+            if word_card.identifier == identifier:
+                return word_card
+        return None
+
+    def toggle_word_card_focus(self, word_id):
+        word = pop_card(self.word_cards_focused, word_id)
+        if word:
+            self.word_cards_main.append(word)
+        else:
+            word = pop_card(self.word_cards_main, word_id)
+            if word:
+                self.word_cards_focused.insert(0, word)
 
 def parse_node(data) -> Node:
     node_type = data.get("type")

@@ -1,10 +1,12 @@
 import json
 import random
+import re
 from typing import List, Dict
 
 from ontology.Age import Age
 from ontology.Gender import Gender
 from ontology.Locale import Locale
+from state.Dialog import DialogCreationAlgorithm
 
 
 class InterlocutorDefinition:
@@ -53,32 +55,47 @@ class Dialogs:
             file_content = json.load(json_file)
             return cls.parse_from_json_data(file_content)
 
-    def generate_initial_prompt(self, locale: Locale) -> DialogPreliminary:
+    def generate_initial_prompt(self, locale: Locale, algorithm: DialogCreationAlgorithm) -> DialogPreliminary:
         main_interlocutor = self.random_interlocutor()
         other_interlocutor = self.random_interlocutor()
 
         main_type = main_interlocutor.name
         other_type = other_interlocutor.name
 
-        main_name = locale.pick_random_name(main_interlocutor.gender)
-        other_name = locale.pick_random_name(other_interlocutor.gender, [main_name])
+        main_gender = main_interlocutor.gender
+        main_name = locale.pick_random_name(main_gender)
+        other_gender = other_interlocutor.gender
+        other_name = locale.pick_random_name(other_gender, [main_name])
 
         main_description = random.choice(main_interlocutor.descriptions)
         other_relation = random.choice(main_interlocutor.other[other_type])
 
-        prompt_start = (f"Write a dialog between {main_name}, a {main_description}, "
-                  f'and {other_relation} {other_name}.')
+        if algorithm == DialogCreationAlgorithm.PARTICIPANTS_AND_SPEC:
+            prompt_start = (f"Suggest a creative context for a dialog in {locale.locale_name} between {main_name}, a {main_description}, "
+                            f'and {other_relation} {other_name}.')
 
-        prompt_end = (f'The dialog is in {locale.locale_name}. '
-                      f'Start each utterance with the name only ("{main_name}:", "{other_name}:").')
+        elif algorithm == DialogCreationAlgorithm.WORD_CARDS:
+            prompt_start = (f"Suggest a creative context for a dialog in {locale.locale_name} between {main_name} ({main_gender.value}) "
+                            f'and {other_name} ({other_gender.value}).')
+
+        else:
+            raise Exception("Shoot")
+
+        prompt_end = (f'Output the result in the following format:\n'
+                      f'# Context\n'
+                      f'<context>\n'
+                      f'# Dialog\n'
+                      f'{main_name}:\n'
+                      f'{other_name}:\n'
+                      f'...')
 
         if locale.special_note:
             prompt_start = prompt_start + ". " + locale.special_note
 
         assigned_voice_map = locale.assign_voices(
             [
-                (main_name, main_interlocutor.gender),
-                (other_name, other_interlocutor.gender)
+                (main_name, main_gender),
+                (other_name, other_gender)
             ]
         )
 
@@ -86,8 +103,8 @@ class Dialogs:
             prompt_start,
             prompt_end,
             [
-                [main_type, main_name, main_interlocutor.gender.to_char(), assigned_voice_map[main_name]],
-                [other_type, other_name, other_interlocutor.gender.to_char(), assigned_voice_map[other_name]],
+                [main_type, main_name, main_gender.to_char(), assigned_voice_map[main_name]],
+                [other_type, other_name, other_gender.to_char(), assigned_voice_map[other_name]],
             ])
 
     def random_interlocutor(self) -> InterlocutorDefinition:
@@ -100,8 +117,27 @@ def do_main():
     locale_name = "tr"
     locale = Locale.parse_from_file_name(f"../../data/{locale_name}.json")
 
-    initial_prompt = dialogs.generate_initial_prompt(locale)
+    initial_prompt = dialogs.generate_initial_prompt(locale, DialogCreationAlgorithm.PARTICIPANTS_AND_SPEC)
     print(initial_prompt)
+
+
+def extract_context_and_dialog(input_string):
+
+    # Use regex to find the anchors at the start of lines
+    context_match = re.search(r'^# Context\n', input_string, re.MULTILINE)
+    dialog_match = re.search(r'^# Dialog\n', input_string, re.MULTILINE)
+
+    # If either anchor is not found, return (None, None)
+    if not context_match or not dialog_match:
+        return None, None
+
+    context_start = context_match.end()
+    dialog_start = dialog_match.end()
+
+    context = input_string[context_start:dialog_match.start()].strip()
+    dialog = input_string[dialog_start:].strip()
+
+    return context, dialog
 
 
 if __name__ == '__main__':
