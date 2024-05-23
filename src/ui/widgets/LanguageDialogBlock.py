@@ -14,7 +14,13 @@ class LanguageDialogWidget(NodeWidget):
         self.dialog = dialog
 
         # Create labels and add them to the left layout
+        self.text_edit_context = QTextEdit()
+        self.text_edit_context.setReadOnly(True)
+        self.text_edit_context.setFixedHeight(40)
+        self.text_edit_context.setText(dialog.context)
+
         self.label_who = QLabel("<...>")
+
         self.text_edit_src = QTextEdit()
         self.text_edit_src.setReadOnly(True)
         self.text_edit_src.setFont(large_qedit_font)
@@ -27,6 +33,7 @@ class LanguageDialogWidget(NodeWidget):
         self.text_edit_src.setMinimumSize(800, 10)
         self.text_edit_translation.setMinimumSize(800, 10)
 
+        self.main_layout.addWidget(self.text_edit_context)
         self.main_layout.addWidget(self.label_who)
         self.main_layout.addWidget(self.text_edit_src)
         self.main_layout.addWidget(self.text_edit_translation)
@@ -48,11 +55,13 @@ class LanguageDialogWidget(NodeWidget):
         self.button_next = QPushButton(">")
         button_play = QPushButton("Play")
         button_show = QPushButton("Show")
+        self.button_words = QPushButton("Words") if self.dialog.selected_word_card_ids else None
 
         self.button_previous.setSizePolicy(QSizePolicy.Fixed, QSizePolicy.Fixed)
         self.button_next.setSizePolicy(QSizePolicy.Fixed, QSizePolicy.Fixed)
         button_play.setSizePolicy(QSizePolicy.Fixed, QSizePolicy.Fixed)
         button_show.setSizePolicy(QSizePolicy.Fixed, QSizePolicy.Fixed)
+
 
         # Connect buttons to corresponding slots/methods
         self.button_previous.clicked.connect(self.navigate_previous)
@@ -65,12 +74,42 @@ class LanguageDialogWidget(NodeWidget):
         button_layout.addWidget(self.button_next)
         button_layout.addWidget(button_play)
         button_layout.addWidget(button_show)
+
+        if self.button_words:
+            self.button_words.setSizePolicy(QSizePolicy.Fixed, QSizePolicy.Fixed)
+            self.button_words.clicked.connect(self.show_words)
+            button_layout.addWidget(self.button_words)
+
         button_layout.addStretch(1)  # Add stretch after buttons
 
         self.update_navigation_enabled()
 
         # Add the button layout to the main layout
         self.layout().addLayout(button_layout)
+
+        self.button_layout = button_layout
+
+    def show_words(self):
+        if self.button_words:
+            self.button_layout.removeWidget(self.button_words)
+            self.button_words.deleteLater()
+            self.button_words = None
+
+        learning = self.ui_context.learning
+
+        for word_id in self.dialog.selected_word_card_ids:
+            word = learning.get_word(word_id)
+            word_button = QPushButton(word.word)
+            word_button.setCheckable(True)
+            word_button.setChecked(learning.is_focused(word_id))
+            word_button.setSizePolicy(QSizePolicy.Fixed, QSizePolicy.Fixed)
+            self.button_layout.addWidget(word_button)
+
+            word_button.clicked.connect(lambda checked, word_id_capture=word_id: self.toggle_word_card(word_id_capture))
+
+    def toggle_word_card(self, word_id):
+        self.ui_context.learning.toggle_word_card_focus(word_id)
+        self.ui_context.trigger_save()
 
     def keyPressEvent(self, event):
         if event.key() == Qt.Key_Left:

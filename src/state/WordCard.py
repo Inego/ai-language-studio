@@ -39,3 +39,9 @@ def move_id_to_start(cards: List[WordCard], identifier: str):
     move_card(cards, identifier, lambda cs, c: cs.insert(0, c))
 
 
+def pop_card(cards: List[WordCard], identifier: str):
+    index = next((i for i, card in enumerate(cards) if card.identifier == identifier), None)
+    if index is not None:
+        card = cards.pop(index)
+        return card
+    return None

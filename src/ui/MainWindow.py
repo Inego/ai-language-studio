@@ -17,7 +17,7 @@ from state.Learning import Learning
 from state.WordCard import move_id_to_end
 from ui.widgets.LanguageDialogBlock import LanguageDialogWidget
 from ui.widgets.NodeWidget import UiContext
-from ui.widgets.WordCardsDialog import WordCardsDialog
+from ui.widgets.modal.WordCardsDialog import WordCardsDialog
 from ui.widgets.modal.GenerateDialogModal import GenerateDialogModal
 from ui.widgets.widget_utils import clear_layout
 

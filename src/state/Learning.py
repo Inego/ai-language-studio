@@ -5,7 +5,7 @@ from typing import List
 from state.Dialog import Dialog, CreateDialogSettings
 from state.Node import Node
 from state.RootNode import RootNode
-from state.WordCard import WordCard
+from state.WordCard import WordCard, pop_card
 
 
 class Learning:
@@ -55,6 +55,26 @@ class Learning:
             "createDialogSettings": self.create_dialog_settings.to_data()
         }
 
+    def is_focused(self, word_id):
+        return word_id in (w.identifier for w in self.word_cards_focused)
+
+    def get_word(self, identifier):
+        for word_card in self.word_cards_focused:
+            if word_card.identifier == identifier:
+                return word_card
+        for word_card in self.word_cards_main:
+            if word_card.identifier == identifier:
+                return word_card
+        return None
+
+    def toggle_word_card_focus(self, word_id):
+        word = pop_card(self.word_cards_focused, word_id)
+        if word:
+            self.word_cards_main.append(word)
+        else:
+            word = pop_card(self.word_cards_main, word_id)
+            if word:
+                self.word_cards_focused.insert(0, word)
 
 def parse_node(data) -> Node:
     node_type = data.get("type")
