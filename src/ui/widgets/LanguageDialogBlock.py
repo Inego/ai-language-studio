@@ -41,6 +41,8 @@ class LanguageDialogWidget(NodeWidget):
         # Set the main layout for the widget
         self.setLayout(self.main_layout)
 
+        self.is_playing = False
+
         # Add control buttons
         self.add_controls()
 
@@ -53,26 +55,25 @@ class LanguageDialogWidget(NodeWidget):
         # Create buttons
         self.button_previous = QPushButton("<")
         self.button_next = QPushButton(">")
-        button_play = QPushButton("Play")
+        self.button_play = QPushButton("Play")
         button_show = QPushButton("Show")
         self.button_words = QPushButton("Words") if self.dialog.selected_word_card_ids else None
 
         self.button_previous.setSizePolicy(QSizePolicy.Fixed, QSizePolicy.Fixed)
         self.button_next.setSizePolicy(QSizePolicy.Fixed, QSizePolicy.Fixed)
-        button_play.setSizePolicy(QSizePolicy.Fixed, QSizePolicy.Fixed)
+        self.button_play.setSizePolicy(QSizePolicy.Fixed, QSizePolicy.Fixed)
         button_show.setSizePolicy(QSizePolicy.Fixed, QSizePolicy.Fixed)
-
 
         # Connect buttons to corresponding slots/methods
         self.button_previous.clicked.connect(self.navigate_previous)
         self.button_next.clicked.connect(self.navigate_next)
-        button_play.clicked.connect(self.play_dialog)
+        self.button_play.clicked.connect(self.play_dialog)
         button_show.clicked.connect(self.reveal)
 
         # Add buttons to the button layout
         button_layout.addWidget(self.button_previous)
         button_layout.addWidget(self.button_next)
-        button_layout.addWidget(button_play)
+        button_layout.addWidget(self.button_play)
         button_layout.addWidget(button_show)
 
         if self.button_words:
@@ -88,6 +89,11 @@ class LanguageDialogWidget(NodeWidget):
         self.layout().addLayout(button_layout)
 
         self.button_layout = button_layout
+
+        self.ui_context.audio_player.media_stopped.connect(self.on_media_stopped)
+
+    def on_media_stopped(self):
+        self.is_playing = False
 
     def show_words(self):
         if self.button_words:
@@ -165,13 +171,17 @@ class LanguageDialogWidget(NodeWidget):
             self.navigate(True)
 
     def play_dialog(self):
-        sentence = self.get_current_sentence()
-        # Get corresponding interlocutor voice from the Dialog
-        interlocutor = self.dialog.get_interlocutor(sentence.who)
-        text_to_play = sentence.sentence
-        if self.ui_context.learning.language == 'sr':
-            text_to_play = latin_to_cyrillic(text_to_play)
-        self.ui_context.audio_player.play(interlocutor.voice, text_to_play)
+        if self.is_playing:
+            self.ui_context.audio_player.stop()  # Add a method to stop the audio player
+            self.is_playing = False
+        else:
+            sentence = self.get_current_sentence()
+            interlocutor = self.dialog.get_interlocutor(sentence.who)
+            text_to_play = sentence.sentence
+            if self.ui_context.learning.language == 'sr':
+                text_to_play = latin_to_cyrillic(text_to_play)
+            self.ui_context.audio_player.play(interlocutor.voice, text_to_play)
+            self.is_playing = True
 
     def get_max_show_level(self):
         if self.dialog.dialog_type == DialogType.LISTEN:

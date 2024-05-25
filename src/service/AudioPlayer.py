@@ -1,12 +1,15 @@
 import os
 
-from PyQt5.QtCore import QBuffer, QByteArray
+from PyQt5.QtCore import QBuffer, QByteArray, pyqtSignal, QObject
 from PyQt5.QtMultimedia import QMediaPlayer, QMediaContent
 from azure.cognitiveservices.speech import SpeechSynthesizer, SpeechConfig, SpeechSynthesisOutputFormat
 
 
-class AudioPlayer:
-    def __init__(self, openai_client, parent):
+class AudioPlayer(QObject):
+    media_stopped = pyqtSignal()  # Define a custom signal
+
+    def __init__(self, openai_client, parent=None):
+        super().__init__(parent)
         self.openai_client = openai_client
         self.cache = {}
         self.speech_synthesizers = {}
@@ -16,11 +19,19 @@ class AudioPlayer:
 
         self.audio_buffer = QBuffer()
 
+        self.stopping = False
+
     def on_media_status_changed(self, status):
-        # print(status)
+        print(status)
         if status == QMediaPlayer.LoadedMedia:
             # The media is loaded and ready to be played
-            self.media_player.play()
+            if self.stopping:
+                self.stopping = False
+            else:
+                self.media_player.play()
+        elif status == QMediaPlayer.EndOfMedia:
+            # The media has finished playing
+            self.media_stopped.emit()  # Emit the custom signal
 
     def play(self, voice, utterance):
         audio_bytes = self.get_or_retrieve(voice, utterance)
@@ -31,6 +42,10 @@ class AudioPlayer:
         self.audio_buffer.open(QBuffer.ReadOnly)
         media_content = QMediaContent()
         self.media_player.setMedia(media_content, self.audio_buffer)
+
+    def stop(self):
+        self.stopping = True
+        self.media_player.stop()
 
     def play_now(self):
         self.media_player.play()
