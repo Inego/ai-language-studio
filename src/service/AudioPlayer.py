@@ -22,7 +22,7 @@ class AudioPlayer(QObject):
         self.stopping = False
 
     def on_media_status_changed(self, status):
-        print(status)
+        # print(status)
         if status == QMediaPlayer.LoadedMedia:
             # The media is loaded and ready to be played
             if self.stopping:

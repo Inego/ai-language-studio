@@ -23,7 +23,7 @@ class Learning:
         return cls(
             data["language"],
             data.get("secondLanguage", "en"),
-            parse_node(data["root"]),
+            parse_node(data.get("root", {})),
             [WordCard.from_list(x) for x in data.get("wordCardsFocused", [])],
             [WordCard.from_list(x) for x in data.get("wordCardsMain", [])],
             CreateDialogSettings.from_data(data.get("createDialogSettings", {}))
