@@ -1,0 +1,70 @@
+{
+  "name": "Italian",
+  "names": {
+    "male": [
+      "Alessandro",
+      "Andrea",
+      "Antonio",
+      "Bruno",
+      "Carlo",
+      "Claudio",
+      "Davide",
+      "Domenico",
+      "Enrico",
+      "Fabio",
+      "Federico",
+      "Francesco",
+      "Gabriele",
+      "Giovanni",
+      "Lorenzo",
+      "Luca",
+      "Marco",
+      "Matteo",
+      "Paolo",
+      "Stefano"
+    ],
+    "female": [
+      "Alessandra",
+      "Bianca",
+      "Camilla",
+      "Daniela",
+      "Elena",
+      "Francesca",
+      "Giulia",
+      "Isabella",
+      "Livia",
+      "Martina",
+      "Nicoletta",
+      "Olivia",
+      "Paola",
+      "Raffaella",
+      "Sabrina",
+      "Teresa",
+      "Valentina",
+      "Vittoria",
+      "Zoe",
+      "Chiara"
+    ]
+  },
+  "voices": {
+    "male": [
+      "it-IT-DiegoNeural",
+      "it-IT-BenignoNeural",
+      "it-IT-CalimeroNeural",
+      "it-IT-CataldoNeural",
+      "it-IT-GianniNeural",
+      "it-IT-GiuseppeNeural",
+      "it-IT-LisandroNeural",
+      "it-IT-RinaldoNeural"
+    ],
+    "female": [
+      "it-IT-ElsaNeural",
+      "it-IT-IsabellaNeural",
+      "it-IT-IsabellaNeural",
+      "it-IT-FiammaNeural",
+      "it-IT-ImeldaNeural",
+      "it-IT-IrmaNeural",
+      "it-IT-PalmiraNeural"
+    ]
+  }
+}

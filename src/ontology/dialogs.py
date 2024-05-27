@@ -75,8 +75,9 @@ class Dialogs:
                             f'and {other_relation} {other_name}.')
 
         elif algorithm == DialogCreationAlgorithm.WORD_CARDS:
-            prompt_start = (f"Suggest a creative context for a dialog in {locale.locale_name} between {main_name} ({main_gender.value}) "
-                            f'and {other_name} ({other_gender.value}).')
+            prompt_start = (f"Suggest a setting and context for a dialog in {locale.locale_name} between {main_name} ({main_gender.value}) "
+                            f'and {other_name} ({other_gender.value}).\nMention their age '
+                            f'(kid / young adult / adult / elderly) and how they are related (if at all).\n')
 
         else:
             raise Exception("Shoot")
