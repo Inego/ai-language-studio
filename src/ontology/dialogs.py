@@ -72,7 +72,7 @@ class Dialogs:
 
         if algorithm == DialogCreationAlgorithm.PARTICIPANTS_AND_SPEC:
             prompt_start = (f"Suggest a creative context for a dialog in {locale.locale_name} between {main_name}, a {main_description}, "
-                            f'and {other_relation} {other_name}.')
+                            f'and {other_relation} {other_name}. The dialog must be written in a simple language (level A1).')
 
         elif algorithm == DialogCreationAlgorithm.WORD_CARDS:
             prompt_start = (f"Suggest a setting and context for a dialog in {locale.locale_name} between {main_name} ({main_gender.value}) "
@@ -125,8 +125,8 @@ def do_main():
 def extract_context_and_dialog(input_string):
 
     # Use regex to find the anchors at the start of lines
-    context_match = re.search(r'^# Context\n', input_string, re.MULTILINE)
-    dialog_match = re.search(r'^# Dialog\n', input_string, re.MULTILINE)
+    context_match = re.search(r'^# Context\s*\n', input_string, re.MULTILINE)
+    dialog_match = re.search(r'^# Dialog\s*\n', input_string, re.MULTILINE)
 
     # If either anchor is not found, return (None, None)
     if not context_match or not dialog_match:

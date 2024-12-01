@@ -27,6 +27,8 @@ class GenerateDialogModal(QDialog):
         self.result: Optional[Dialog] = None
         self.setWindowTitle('Generate Dialog')
 
+        self.resize(800, 400)
+
         self.initial_prompt = self.generate_initial_prompt()
 
         self.stacked_widget = QStackedWidget(self)
@@ -146,8 +148,11 @@ class GenerateDialogModal(QDialog):
         regen_button = QPushButton("\U0001F501", self)
         regen_button.clicked.connect(self.regen_plot)
         plot_row.addWidget(regen_button)
-        self.plot_label = QLabel("Plot", self)
-        plot_row.addWidget(self.plot_label)
+        self.plot_edit = QTextEdit(self)
+        self.plot_edit.setReadOnly(True)
+        self.plot_edit.setMaximumHeight(100)
+        self.plot_edit.setMinimumHeight(60)
+        plot_row.addWidget(self.plot_edit)
         self.refresh_plot_label()
 
         dialog_controls_rows.addLayout(plot_row)
@@ -176,7 +181,7 @@ class GenerateDialogModal(QDialog):
         return self.dialogs.generate_initial_prompt(self.locale, self.settings.algorithm)
 
     def refresh_plot_label(self):
-        self.plot_label.setText(self.initial_prompt.prompt)
+        self.plot_edit.setText(self.initial_prompt.prompt)
 
     def add_stage_name(self, stage_name: str):
         stage_panel = QWidget(self)
@@ -210,13 +215,20 @@ class GenerateDialogModal(QDialog):
         thread.new_stage_signal.connect(self.add_stage_name)
         thread.update_count_signal.connect(self.add_stage_current_count)
         thread.finished_signal.connect(self.finished)
+        thread.error_signal.connect(self.handle_error)  # Connect error signal
         thread.start()
+
+    def handle_error(self, error_message):
+        from PyQt5.QtWidgets import QMessageBox
+        QMessageBox.critical(self, "Error", f"An error occurred during dialog generation:\n\n{error_message}")
+        self.stacked_widget.setCurrentIndex(0)  # Return to the first panel
 
 
 class GenerateDialogThread(QThread):
     new_stage_signal = pyqtSignal(str)
     update_count_signal = pyqtSignal(int)
     finished_signal = pyqtSignal(Dialog)
+    error_signal = pyqtSignal(str)
 
     def __init__(self,
                  openai_client: OpenAI,
@@ -239,62 +251,72 @@ class GenerateDialogThread(QThread):
         self.word_cards_combined = word_cards_combined
 
     def run(self):
-        language_name = self.locale.locale_name
-        second_language_name = self.second_locale.locale_name
-        self.new_stage_signal.emit(f"Generating dialog in {language_name}")
+        try:
+            language_name = self.locale.locale_name
+            second_language_name = self.second_locale.locale_name
+            self.new_stage_signal.emit(f"Generating dialog in {language_name}")
 
-        prompt = self.initial_prompt.prompt
+            prompt = self.initial_prompt.prompt
 
-        selected_word_card_ids = []
-        if self.settings.algorithm == DialogCreationAlgorithm.PARTICIPANTS_AND_SPEC:
-            if self.prompt_details:
-                prompt += " " + self.prompt_details
+            selected_word_card_ids = []
+            if self.settings.algorithm == DialogCreationAlgorithm.PARTICIPANTS_AND_SPEC:
+                if self.prompt_details:
+                    prompt += " " + self.prompt_details
 
-        elif self.settings.algorithm == DialogCreationAlgorithm.WORD_CARDS:
-            # Retrieve 3 weighted
-            selected_words: List[WordCard] = select_and_remove(self.word_cards_combined, 3)
-            if selected_words:
-                prompt += (" The dialog should feature the following words: " +
-                           ", ".join(f'"{w.word}"' for w in selected_words) + ".")
-            selected_word_card_ids = [w.identifier for w in selected_words]
+            elif self.settings.algorithm == DialogCreationAlgorithm.WORD_CARDS:
+                selected_words: List[WordCard] = select_and_remove(self.word_cards_combined, 3)
+                if selected_words:
+                    prompt += (" The dialog should feature the following words: " +
+                               ", ".join(f'"{w.word}"' for w in selected_words) + ".")
+                selected_word_card_ids = [w.identifier for w in selected_words]
 
-        prompt += " " + self.initial_prompt.prompt_end
-        print(prompt)
-        dialog_orig = stream_chat_completion(
-            self.openai_client,
-            MODEL_HEAVY if self.locale.heavy_generation or self.settings.use_heavy_model else MODEL_BASIC,
-            [{"role": "user", "content": prompt}],
-            1,
-            lambda x: self.update_count_signal.emit(x)
-        )
-        print(dialog_orig)
+            prompt += " " + self.initial_prompt.prompt_end
+            print(prompt)
 
-        context_text, dialog_text = extract_context_and_dialog(dialog_orig)
+            dialog_orig = stream_chat_completion(
+                self.openai_client,
+                MODEL_HEAVY if self.locale.heavy_generation or self.settings.use_heavy_model else MODEL_BASIC,
+                [{"role": "user", "content": prompt}],
+                1,
+                lambda x: self.update_count_signal.emit(x)
+            )
+            print(dialog_orig)
 
-        self.new_stage_signal.emit("Translating and packing to JSON")
-        aligned = stream_chat_completion(
-            self.openai_client,
-            MODEL_BASIC,
-            [{
-                "role": "user",
-                "content": f"{context_text}\n"
-                           f"Given their dialog in {language_name}:"
-                           f'\n```\n{dialog_text}\n```\n'
-                           f'output a JSON list of each utterance from this dialog with its {second_language_name} translation in the following format: '
-                           f'`[[<who>, <{language_name} utterance>, <{second_language_name} translation>], ...]`. Do not use Markdown!'
-            }],
-            0,
-            lambda x: self.update_count_signal.emit(x)
-        )
-        print(aligned)
-        content = json.loads(aligned)
-        result = Dialog.from_data({
-            "dialogType": self.settings.dialog_type,
-            "interlocutors": self.initial_prompt.interlocutors,
-            "currentPosition": 0,
-            "content": content,
-            "context": context_text,
-            "selectedWordCardIds": selected_word_card_ids
-        })
+            # Attempt to extract the context and dialog
+            context_text, dialog_text = extract_context_and_dialog(dialog_orig)
 
-        self.finished_signal.emit(result)
+            if not context_text or not dialog_text:
+                raise ValueError("Failed to parse the OpenAI response.")
+
+            self.new_stage_signal.emit("Translating and packing to JSON")
+            aligned = stream_chat_completion(
+                self.openai_client,
+                MODEL_BASIC,
+                [{
+                    "role": "user",
+                    "content": f"{context_text}\n"
+                               f"Given their dialog in {language_name}:"
+                               f'\n```\n{dialog_text}\n```\n'
+                               f'output a JSON list of each utterance from this dialog with its {second_language_name} translation in the following format: '
+                               f'`[[<who>, <{language_name} utterance>, <{second_language_name} translation>], ...]`. Do not use Markdown!'
+                }],
+                0,
+                lambda x: self.update_count_signal.emit(x)
+            )
+            print(aligned)
+            content = json.loads(aligned)
+
+            result = Dialog.from_data({
+                "dialogType": self.settings.dialog_type,
+                "interlocutors": self.initial_prompt.interlocutors,
+                "currentPosition": 0,
+                "content": content,
+                "context": context_text,
+                "selectedWordCardIds": selected_word_card_ids
+            })
+
+            self.finished_signal.emit(result)
+
+        except Exception as e:
+            error_message = str(e)
+            self.error_signal.emit(error_message)
