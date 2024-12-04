@@ -55,7 +55,7 @@ class Dialogs:
             file_content = json.load(json_file)
             return cls.parse_from_json_data(file_content)
 
-    def generate_initial_prompt(self, locale: Locale, algorithm: DialogCreationAlgorithm) -> DialogPreliminary:
+    def generate_initial_prompt(self, locale: Locale, second_locale: Locale, algorithm: DialogCreationAlgorithm) -> DialogPreliminary:
         main_interlocutor = self.random_interlocutor()
         other_interlocutor = self.random_interlocutor()
 
@@ -71,18 +71,17 @@ class Dialogs:
         other_relation = random.choice(main_interlocutor.other[other_type])
 
         if algorithm == DialogCreationAlgorithm.PARTICIPANTS_AND_SPEC:
-            prompt_start = (f"Suggest a creative context for a dialog in {locale.locale_name} between {main_name}, a {main_description}, "
+            prompt_start = (f"For a {locale.locale_name} language textbook, suggest a context and write a dialog between {main_name}, a {main_description}, "
                             f'and {other_relation} {other_name}. The dialog must be written in a simple language (level A1).')
 
         elif algorithm == DialogCreationAlgorithm.WORD_CARDS:
-            prompt_start = (f"Suggest a setting and context for a dialog in {locale.locale_name} between {main_name} ({main_gender.value}) "
-                            f'and {other_name} ({other_gender.value}).\nMention their age '
-                            f'(kid / young adult / adult / elderly) and how they are related (if at all).\n')
+            prompt_start = (f"For a {locale.locale_name} language textbook, suggest a context and write a dialog between {main_name} ({main_gender.value}) "
+                            f'and {other_name} ({other_gender.value}).')
 
         else:
             raise Exception("Shoot")
 
-        prompt_end = (f'Output the result in the following format:\n'
+        prompt_end = (f'Write the context in {second_locale.locale_name}, and the dialog in {locale.locale_name}. Output the result in the following format:\n'
                       f'# Context\n'
                       f'<context>\n'
                       f'# Dialog\n'
@@ -118,7 +117,9 @@ def do_main():
     locale_name = "tr"
     locale = Locale.parse_from_file_name(f"../../data/{locale_name}.json")
 
-    initial_prompt = dialogs.generate_initial_prompt(locale, DialogCreationAlgorithm.PARTICIPANTS_AND_SPEC)
+    second_locale = Locale.parse_from_file_name(f"../../data/en.json")
+
+    initial_prompt = dialogs.generate_initial_prompt(locale, second_locale, DialogCreationAlgorithm.PARTICIPANTS_AND_SPEC)
     print(initial_prompt)
 
 

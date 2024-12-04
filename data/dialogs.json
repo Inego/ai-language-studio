@@ -23,7 +23,8 @@
           "his boss",
           "his colleague",
           "a taxi driver",
-          "a market seller"
+          "a market seller",
+          "a doctor"
         ],
         "woman": [
           "his younger sister",
@@ -36,7 +37,8 @@
           "his neighbor",
           "his boss",
           "his colleague",
-          "a market seller"
+          "a market seller",
+          "a doctor"
         ],
         "boy": [
           "his younger brother",
@@ -71,7 +73,8 @@
           "her boss",
           "her colleague",
           "a taxi driver",
-          "a market seller"
+          "a market seller",
+          "a doctor"
         ],
         "woman": [
           "her younger sister",
@@ -81,7 +84,8 @@
           "her roommate",
           "her boss",
           "her colleague",
-          "a market seller"
+          "a market seller",
+          "a doctor"
         ],
         "boy": [
           "her younger brother",

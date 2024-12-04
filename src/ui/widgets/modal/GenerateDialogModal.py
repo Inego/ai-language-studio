@@ -178,7 +178,7 @@ class GenerateDialogModal(QDialog):
         self.refresh_plot_label()
 
     def generate_initial_prompt(self):
-        return self.dialogs.generate_initial_prompt(self.locale, self.settings.algorithm)
+        return self.dialogs.generate_initial_prompt(self.locale, self.second_locale, self.settings.algorithm)
 
     def refresh_plot_label(self):
         self.plot_edit.setText(self.initial_prompt.prompt)
