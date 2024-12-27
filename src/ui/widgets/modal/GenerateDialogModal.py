@@ -4,18 +4,21 @@ from typing import Optional, List
 from PyQt5.QtCore import QThread, pyqtSignal, Qt
 from PyQt5.QtWidgets import QDialog, QStackedWidget, QVBoxLayout, QPushButton, QHBoxLayout, QLabel, QWidget, QCheckBox, \
     QTextEdit, QRadioButton, QButtonGroup
+from google import genai
 from openai import OpenAI
 
 from ontology.Locale import Locale
 from ontology.dialogs import Dialogs, DialogPreliminary, extract_context_and_dialog
-from state.Dialog import Dialog, CreateDialogSettings, DialogCreationAlgorithm, DialogType
+from state.Dialog import Dialog, CreateDialogSettings, DialogCreationAlgorithm, DialogType, ApiType
 from state.WordCard import WordCard
+from utils.ai_utils import stream_chat_completion
+from utils.format_utils import remove_fenced_lines
 from utils.my_random import select_and_remove
-from utils.openai_utils import stream_chat_completion, MODEL_BASIC, MODEL_HEAVY
+
 
 
 class GenerateDialogModal(QDialog):
-    def __init__(self, openai_client: OpenAI, dialogs: Dialogs, locale: Locale, second_locale: Locale,
+    def __init__(self, openai_client: OpenAI, gemini_client: genai.Client, dialogs: Dialogs, locale: Locale, second_locale: Locale,
                  settings: CreateDialogSettings, word_cards_combined: List[WordCard], parent=None):
         super(GenerateDialogModal, self).__init__(parent)
         self.locale = locale
@@ -24,6 +27,7 @@ class GenerateDialogModal(QDialog):
         self.word_cards_combined = word_cards_combined
         self.dialogs = dialogs
         self.openai_client = openai_client
+        self.gemini_client = gemini_client
         self.result: Optional[Dialog] = None
         self.setWindowTitle('Generate Dialog')
 
@@ -99,22 +103,8 @@ class GenerateDialogModal(QDialog):
 
         dialog_controls_first_row = QHBoxLayout()
 
-        dialog_type_layout = QVBoxLayout()
-        self.radio_dialog_type_listen = QRadioButton("Listen")
-        self.radio_dialog_type_speak = QRadioButton("Speak")
-        dialog_type_group = QButtonGroup(self)
-        dialog_type_group.addButton(self.radio_dialog_type_listen)
-        dialog_type_group.addButton(self.radio_dialog_type_speak)
-        dialog_type_layout.addWidget(self.radio_dialog_type_listen)
-        dialog_type_layout.addWidget(self.radio_dialog_type_speak)
-
-        if settings.dialog_type == DialogType.LISTEN:
-            self.radio_dialog_type_listen.setChecked(True)
-        else:
-            self.radio_dialog_type_speak.setChecked(True)
-
-        self.radio_dialog_type_listen.toggled.connect(lambda: self.update_dialog_type(DialogType.LISTEN))
-        self.radio_dialog_type_speak.toggled.connect(lambda: self.update_dialog_type(DialogType.SPEAK))
+        dialog_type_layout = self.add_dialog_type(settings)
+        api_type_layout = self.add_api_type(settings)
 
         algo_layout = QVBoxLayout()
         self.radio_algo_participant = QRadioButton("By participants and spec")
@@ -140,6 +130,7 @@ class GenerateDialogModal(QDialog):
 
         dialog_controls_first_row.addLayout(dialog_type_layout)
         dialog_controls_first_row.addLayout(algo_layout)
+        dialog_controls_first_row.addLayout(api_type_layout)
         dialog_controls_first_row.addWidget(self.use_heavy_model_checkbox)
 
         dialog_controls_rows.addLayout(dialog_controls_first_row)
@@ -159,8 +150,46 @@ class GenerateDialogModal(QDialog):
 
         return dialog_controls_rows
 
+    def add_dialog_type(self, settings: CreateDialogSettings):
+        dialog_type_layout = QVBoxLayout()
+        self.radio_dialog_type_listen = QRadioButton("Listen")
+        self.radio_dialog_type_speak = QRadioButton("Speak")
+        dialog_type_group = QButtonGroup(self)
+        dialog_type_group.addButton(self.radio_dialog_type_listen)
+        dialog_type_group.addButton(self.radio_dialog_type_speak)
+        dialog_type_layout.addWidget(self.radio_dialog_type_listen)
+        dialog_type_layout.addWidget(self.radio_dialog_type_speak)
+        if settings.dialog_type == DialogType.LISTEN:
+            self.radio_dialog_type_listen.setChecked(True)
+        else:
+            self.radio_dialog_type_speak.setChecked(True)
+        self.radio_dialog_type_listen.toggled.connect(lambda: self.update_dialog_type(DialogType.LISTEN))
+        self.radio_dialog_type_speak.toggled.connect(lambda: self.update_dialog_type(DialogType.SPEAK))
+        return dialog_type_layout
+
+    def add_api_type(self, settings: CreateDialogSettings):
+        api_type_layout = QVBoxLayout()
+        self.radio_api_type_openai = QRadioButton("OpenAI")
+        self.radio_api_type_gemini = QRadioButton("Gemini")
+        api_type_group = QButtonGroup(self)
+        api_type_group.addButton(self.radio_api_type_openai)
+        api_type_group.addButton(self.radio_api_type_gemini)
+        api_type_layout.addWidget(self.radio_api_type_openai)
+        api_type_layout.addWidget(self.radio_api_type_gemini)
+        if settings.api_type == ApiType.OPEN_AI:
+            self.radio_api_type_openai.setChecked(True)
+        else:
+            self.radio_api_type_gemini.setChecked(True)
+        self.radio_api_type_openai.toggled.connect(lambda: self.update_api_type(ApiType.OPEN_AI))
+        self.radio_api_type_gemini.toggled.connect(lambda: self.update_api_type(ApiType.GEMINI))
+        return api_type_layout
+
+
     def update_dialog_type(self, dialog_type):
         self.settings.dialog_type = dialog_type
+
+    def update_api_type(self, api_type):
+        self.settings.api_type = api_type
 
     def update_algorithm(self, algorithm):
         self.settings.algorithm = algorithm
@@ -203,6 +232,7 @@ class GenerateDialogModal(QDialog):
 
         thread = GenerateDialogThread(
             self.openai_client,
+            self.gemini_client,
             self.dialogs,
             self.locale,
             self.second_locale,
@@ -232,6 +262,7 @@ class GenerateDialogThread(QThread):
 
     def __init__(self,
                  openai_client: OpenAI,
+                 gemini_client: genai.Client,
                  dialogs: Dialogs,
                  locale: Locale,
                  second_locale: Locale,
@@ -242,6 +273,7 @@ class GenerateDialogThread(QThread):
                  parent=None):
         super(GenerateDialogThread, self).__init__(parent)
         self.openai_client = openai_client
+        self.gemini_client = gemini_client
         self.dialogs = dialogs
         self.locale = locale
         self.second_locale = second_locale
@@ -275,8 +307,10 @@ class GenerateDialogThread(QThread):
 
             dialog_orig = stream_chat_completion(
                 self.openai_client,
-                MODEL_HEAVY if self.locale.heavy_generation or self.settings.use_heavy_model else MODEL_BASIC,
-                [{"role": "user", "content": prompt}],
+                self.gemini_client,
+                self.settings.api_type,
+                self.locale.heavy_generation or self.settings.use_heavy_model,
+                prompt,
                 1,
                 lambda x: self.update_count_signal.emit(x)
             )
@@ -291,19 +325,19 @@ class GenerateDialogThread(QThread):
             self.new_stage_signal.emit("Translating and packing to JSON")
             aligned = stream_chat_completion(
                 self.openai_client,
-                MODEL_BASIC,
-                [{
-                    "role": "user",
-                    "content": f"{context_text}\n"
+                self.gemini_client,
+                self.settings.api_type,
+                False,
+                f"{context_text}\n"
                                f"Given their dialog in {language_name}:"
                                f'\n```\n{dialog_text}\n```\n'
                                f'output a JSON list of each utterance from this dialog with its {second_language_name} translation in the following format: '
-                               f'`[[<who>, <{language_name} utterance>, <{second_language_name} translation>], ...]`. Do not use Markdown!'
-                }],
+                               f'`[[<who>, <{language_name} utterance>, <{second_language_name} translation>], ...]`.',
                 0,
                 lambda x: self.update_count_signal.emit(x)
             )
             print(aligned)
+            aligned = remove_fenced_lines(aligned)
             content = json.loads(aligned)
 
             result = Dialog.from_data({

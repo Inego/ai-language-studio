@@ -6,6 +6,7 @@ import traceback
 from PyQt5.QtWidgets import QApplication, QWidget, QVBoxLayout, QPushButton, QDialog, QMainWindow, \
     QAction
 from dotenv import load_dotenv
+from google import genai
 from openai import OpenAI
 
 from ontology.Locale import Locale
@@ -51,6 +52,7 @@ class MainWindow(QMainWindow):
         self.second_locale = Locale.parse_from_file_name(f"../../data/{second_locale_name}.json")
 
         self.openai_client = OpenAI()
+        self.gemini_client = genai.Client()
         self.audio_player = AudioPlayer(self.openai_client, self)
 
         self.setWindowTitle("AI Language Studio")
@@ -88,7 +90,7 @@ class MainWindow(QMainWindow):
 
     def open_generate_dialog_modal(self):
         dialog = GenerateDialogModal(
-            self.openai_client, self.dialogs, self.locale, self.second_locale, self.learning.create_dialog_settings,
+            self.openai_client, self.gemini_client, self.dialogs, self.locale, self.second_locale, self.learning.create_dialog_settings,
             self.learning.word_cards_focused + self.learning.word_cards_main,
             parent=self)
         result = dialog.exec_()

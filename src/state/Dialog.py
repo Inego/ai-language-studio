@@ -24,12 +24,17 @@ class DialogType(Enum):
     LISTEN = "listen"
     SPEAK = "speak"
 
+class ApiType(Enum):
+    OPEN_AI = "open-ai"
+    GEMINI = "gemini"
+
 
 class Dialog(Node):
     def prepare_specific_json_object(self):
         return {
             "type": "dialog",
             "dialogType": self.dialog_type.value,
+            "apiType": self.api_type.value,
             "interlocutors": [[i.type, i.name, i.gender, i.voice] for i in self.interlocutors],
             "currentPosition": self.current_position,
             "content": [[s.who, s.sentence, s.translation] for s in self.content],
@@ -37,9 +42,10 @@ class Dialog(Node):
             "selectedWordCardIds": self.selected_word_card_ids
         }
 
-    def __init__(self, dialog_type: DialogType, interlocutors: list[Interlocutor], current_position, content: list[Sentence], context: str, selected_word_card_ids: List[str]):
+    def __init__(self, dialog_type: DialogType, api_type: ApiType, interlocutors: list[Interlocutor], current_position, content: list[Sentence], context: str, selected_word_card_ids: List[str]):
         super().__init__()
         self.dialog_type = dialog_type
+        self.api_type = api_type
         self.interlocutors = interlocutors
         self.current_position = current_position
         self.content = content
@@ -52,6 +58,7 @@ class Dialog(Node):
         content = [Sentence(*sentence) for sentence in data['content']]
         return cls(
             DialogType(data.get('dialogType', DialogType.LISTEN.value)),
+            ApiType(data.get('apiType', ApiType.GEMINI.value)),
             interlocutors,
             data['currentPosition'],
             content,
@@ -83,14 +90,16 @@ class DialogCreationAlgorithm(Enum):
 
 @dataclass
 class CreateDialogSettings:
-    dialog_type: DialogType = DialogType.LISTEN  # Default value
-    algorithm: DialogCreationAlgorithm = DialogCreationAlgorithm.PARTICIPANTS_AND_SPEC  # Default value
-    use_heavy_model: bool = False  # Default value
+    dialog_type: DialogType = DialogType.LISTEN
+    api_type: ApiType = ApiType.GEMINI
+    algorithm: DialogCreationAlgorithm = DialogCreationAlgorithm.PARTICIPANTS_AND_SPEC
+    use_heavy_model: bool = False
 
     def to_data(self) -> dict:
         # Custom serialization to handle enums
         return {
             "dialog_type": self.dialog_type.value,
+            "api_type": self.api_type.value,
             "algorithm": self.algorithm.value,
             "use_heavy_model": self.use_heavy_model
         }
@@ -99,6 +108,7 @@ class CreateDialogSettings:
     def from_data(data: dict):
         return CreateDialogSettings(
             dialog_type=DialogType(data.get('dialog_type', DialogType.LISTEN.value)),
+            api_type=ApiType(data.get("api_type", ApiType.GEMINI.value)),
             algorithm=DialogCreationAlgorithm(data.get('algorithm', DialogCreationAlgorithm.PARTICIPANTS_AND_SPEC.value)),
             use_heavy_model=data.get('use_heavy_model', False)
         )

@@ -1,0 +1,5 @@
+openai
+PyQt5
+python-dotenv
+azure-cognitiveservices-speech
+google-genai

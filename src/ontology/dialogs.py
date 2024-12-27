@@ -71,23 +71,24 @@ class Dialogs:
         other_relation = random.choice(main_interlocutor.other[other_type])
 
         if algorithm == DialogCreationAlgorithm.PARTICIPANTS_AND_SPEC:
-            prompt_start = (f"For a {locale.locale_name} language textbook, suggest a context and write a dialog between {main_name}, a {main_description}, "
-                            f'and {other_relation} {other_name}. The dialog must be written in a simple language (level A1).')
+            prompt_start = (f"Suggest a context and write a dialog in {locale.locale_name} language between {main_name}, a {main_description}, "
+                            f'and {other_relation} {other_name}. ')
 
         elif algorithm == DialogCreationAlgorithm.WORD_CARDS:
-            prompt_start = (f"For a {locale.locale_name} language textbook, suggest a context and write a dialog between {main_name} ({main_gender.value}) "
+            prompt_start = (f"For a {locale.locale_name} language textbook, suggest a context and write a dialogue between {main_name} ({main_gender.value}) "
                             f'and {other_name} ({other_gender.value}).')
 
         else:
             raise Exception("Shoot")
 
-        prompt_end = (f'Write the context in {second_locale.locale_name}, and the dialog in {locale.locale_name}. Output the result in the following format:\n'
+        prompt_end = (f'Write the context in {second_locale.locale_name} and the dialogue in {locale.locale_name}. Output the result in the following format:\n'
                       f'# Context\n'
                       f'<context>\n'
                       f'# Dialog\n'
                       f'{main_name}:\n'
                       f'{other_name}:\n'
-                      f'...')
+                      f'...\n\n'
+                      f'Only write direct speech without any remarks!')
 
         if locale.special_note:
             prompt_start = prompt_start + ". " + locale.special_note
