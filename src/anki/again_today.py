@@ -31,15 +31,20 @@ cursor.execute('''
 
 results = cursor.fetchall()
 
-current_deck = None
+deck_map = {}
+
 for deck_name, fields_str in results:
     fields = fields_str.split('\x1f')
     first_field = fields[0] if fields else ""
 
-    if deck_name != current_deck:
-        current_deck = deck_name
-        print(f"{deck_name}:")
+    if deck_name not in deck_map:
+        deck_map[deck_name] = []
+    deck_map[deck_name].append(first_field)
 
-    print(f"  {first_field}")
+# Now print from the map
+for deck_name, words in deck_map.items():
+    print(f"{deck_name}:")
+    word_line = ", ".join(f'"{word}"' for word in words)
+    print(f"  {word_line}")
 
 conn.close()
