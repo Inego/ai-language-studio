@@ -1,0 +1,57 @@
+{
+  "name": "Hungarian",
+  "names": {
+    "male": [
+      "Ádám",
+      "Áron",
+      "Balázs",
+      "Bence",
+      "Botond",
+      "Dániel",
+      "Dominik",
+      "Gergő",
+      "Kristóf",
+      "Levente",
+      "Marcell",
+      "Máté",
+      "Milán",
+      "Nimród",
+      "Noel",
+      "Olivér",
+      "Patrik",
+      "Tamás",
+      "Viktor",
+      "Zalán"
+    ],
+    "female": [
+      "Adél",
+      "Alíz",
+      "Anna",
+      "Boglárka",
+      "Emma",
+      "Flóra",
+      "Hanna",
+      "Kamilla",
+      "Lara",
+      "Laura",
+      "Léna",
+      "Lili",
+      "Lilien",
+      "Luca",
+      "Mira",
+      "Olívia",
+      "Sára",
+      "Szofia",
+      "Zoé",
+      "Zsófia"
+    ]
+  },
+  "voices": {
+    "male": [
+      "hu-HU-TamasNeural"
+    ],
+    "female": [
+      "hu-HU-NoemiNeural"
+    ]
+  }
+}
